@@ -292,7 +292,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
         {/* Chart Controls */}
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
           <div className="flex items-center gap-1">
-            {(['1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
+            {(['3D', '1W', '1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
               <Button
                 key={p}
                 variant={period === p ? 'default' : 'ghost'}
