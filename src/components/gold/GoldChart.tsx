@@ -80,7 +80,7 @@ const Candlestick = (props: any) => {
 
 export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldChartProps) {
   const [chartType, setChartType] = useState<ChartType>('area');
-  const [period, setPeriod] = useState<ChartPeriod>('3M');
+  const [period, setPeriod] = useState<ChartPeriod>('1W');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   
