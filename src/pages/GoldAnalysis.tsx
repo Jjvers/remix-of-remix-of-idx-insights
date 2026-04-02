@@ -155,13 +155,9 @@ export default function GoldAnalysis() {
               <Zap className="h-4 w-4" />
               <span className="hidden sm:inline">Simulator</span>
             </TabsTrigger>
-            <TabsTrigger value="alerts" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Alerts</span>
-            </TabsTrigger>
             <TabsTrigger value="telegram" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">Telegram</span>
+              <span className="hidden sm:inline">Telegram & Alerts</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="gap-1.5">
               <BarChart3 className="h-4 w-4" />
@@ -206,22 +202,10 @@ export default function GoldAnalysis() {
             </div>
           </TabsContent>
 
-          <TabsContent value="alerts" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
-              <div className="space-y-4">
-                <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
-                <FundamentalPanel />
-              </div>
-            </div>
-          </TabsContent>
-
           <TabsContent value="telegram" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <TelegramSettings chatId={telegramChatId} onChatIdChange={setTelegramChatId} />
-              <div className="space-y-4">
-                <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
-              </div>
+              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
             </div>
           </TabsContent>
 
