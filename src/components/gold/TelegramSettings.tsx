@@ -10,7 +10,7 @@ import {
   Send, Bot, CheckCircle2, Copy, ExternalLink, MessageSquare, Settings
 } from 'lucide-react';
 
-const BOT_USERNAME = 'GoldAnalysisBot'; // Users should update this to their actual bot username
+const BOT_USERNAME = 'goldaiprediction_bot';
 
 interface TelegramSettingsProps {
   chatId: string;

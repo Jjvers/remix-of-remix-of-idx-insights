@@ -67,6 +67,38 @@ export function useGoldPrices(refreshInterval = 300000) {
     }
   }, []);
 
+  // Simulate per-second price tick between API fetches
+  useEffect(() => {
+    if (!prices) return;
+    const tickInterval = setInterval(() => {
+      setPrices(prev => {
+        if (!prev) return prev;
+        // Small random fluctuation to simulate real-time tick
+        const xauVol = prev.XAU * 0.00008; // ~0.008% per tick
+        const xagVol = prev.XAG * 0.00015;
+        const xauChange = (Math.random() - 0.48) * xauVol;
+        const xagChange = (Math.random() - 0.48) * xagVol;
+        const newXAU = prev.XAU + xauChange;
+        const newXAG = prev.XAG + xagChange;
+        return {
+          ...prev,
+          XAU: newXAU,
+          XAG: newXAG,
+          goldSilverRatio: newXAU / newXAG,
+          XAU_high: Math.max(prev.XAU_high, newXAU),
+          XAU_low: Math.min(prev.XAU_low, newXAU),
+          XAG_high: Math.max(prev.XAG_high, newXAG),
+          XAG_low: Math.min(prev.XAG_low, newXAG),
+          XAU_change: newXAU - prev.XAU_prev_close,
+          XAU_changePercent: ((newXAU - prev.XAU_prev_close) / prev.XAU_prev_close) * 100,
+          XAG_change: newXAG - prev.XAG_prev_close,
+          XAG_changePercent: ((newXAG - prev.XAG_prev_close) / prev.XAG_prev_close) * 100,
+        };
+      });
+    }, 1000);
+    return () => clearInterval(tickInterval);
+  }, [!!prices]);
+
   useEffect(() => {
     fetchPrices();
     const interval = setInterval(fetchPrices, refreshInterval);

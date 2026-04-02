@@ -45,7 +45,7 @@ interface TradingSimulatorProps {
   telegramChatId?: string;
 }
 
-const INITIAL_BALANCES = [1000, 5000, 10000, 50000, 100000];
+const INITIAL_BALANCES = [1000, 5000, 10000, 25000, 50000, 100000];
 
 export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId }: TradingSimulatorProps) {
   const [balance, setBalance] = useState(10000);
@@ -261,8 +261,13 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
               Trading Simulator
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Select value={String(initialBalance)} onValueChange={v => { setInitialBalance(Number(v)); setBalance(Number(v)); setTrades([]); }}>
-                <SelectTrigger className="w-28 h-8 text-xs">
+              <Select value={String(initialBalance)} onValueChange={v => {
+                if (v === 'custom') return;
+                setInitialBalance(Number(v));
+                setBalance(Number(v));
+                setTrades([]);
+              }}>
+                <SelectTrigger className="w-32 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,6 +276,21 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                   ))}
                 </SelectContent>
               </Select>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  value={initialBalance}
+                  onChange={e => {
+                    const val = Math.max(100, Math.min(1000000, Number(e.target.value) || 1000));
+                    setInitialBalance(val);
+                    setBalance(val);
+                    setTrades([]);
+                  }}
+                  className="w-24 h-8 text-xs font-mono"
+                  placeholder="Custom"
+                />
+              </div>
               <Button
                 size="sm"
                 variant={isSimulating ? 'destructive' : 'default'}

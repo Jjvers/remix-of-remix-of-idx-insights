@@ -31,7 +31,7 @@ interface GoldChartProps {
 }
 
 type ChartType = 'area' | 'candle' | 'line';
-type ChartPeriod = '1M' | '3M' | '6M' | '1Y';
+type ChartPeriod = '3D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toFixed(2)}`;
@@ -80,7 +80,7 @@ const Candlestick = (props: any) => {
 
 export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldChartProps) {
   const [chartType, setChartType] = useState<ChartType>('area');
-  const [period, setPeriod] = useState<ChartPeriod>('3M');
+  const [period, setPeriod] = useState<ChartPeriod>('1W');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   
@@ -89,7 +89,9 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
   const currentPrice = ohlcData[ohlcData.length - 1].close;
   const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 
-  const periodDays = {
+  const periodDays: Record<ChartPeriod, number> = {
+    '3D': 3,
+    '1W': 7,
     '1M': 30,
     '3M': 90,
     '6M': 180,
@@ -290,7 +292,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
         {/* Chart Controls */}
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
           <div className="flex items-center gap-1">
-            {(['1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
+            {(['3D', '1W', '1M', '3M', '6M', '1Y'] as ChartPeriod[]).map((p) => (
               <Button
                 key={p}
                 variant={period === p ? 'default' : 'ghost'}

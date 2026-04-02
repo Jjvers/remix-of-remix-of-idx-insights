@@ -33,11 +33,11 @@ function generateOHLC(basePrice: number, days: number, volatility: number = 0.01
   return data;
 }
 
-// XAU/USD - Spot Gold (USD per troy ounce)
-export const xauUsdData: OHLC[] = generateOHLC(2650, 90, 0.012);
+// XAU/USD - Spot Gold (USD per troy ounce) — 400 days for 1Y chart
+export const xauUsdData: OHLC[] = generateOHLC(2650, 400, 0.012);
 
 // XAG/USD - Spot Silver (USD per troy ounce)
-export const xagUsdData: OHLC[] = generateOHLC(30, 90, 0.018);
+export const xagUsdData: OHLC[] = generateOHLC(30, 400, 0.018);
 
 // Current prices (will be overridden by live API data)
 export const currentPrices: Record<GoldInstrument, GoldPrice> = {
