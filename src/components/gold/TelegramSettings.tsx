@@ -124,10 +124,18 @@ export function TelegramSettings({ chatId, onChatIdChange }: TelegramSettingsPro
             <MessageSquare className="h-4 w-4 text-accent" />
             Step 2: Masukkan Chat ID
           </h4>
-          <p className="text-xs text-muted-foreground mb-3">
-            Untuk <b>personal</b>: kirim <code>/start</code> ke bot, lalu lihat Chat ID di balasan.<br/>
-            Untuk <b>grup</b>: tambahkan bot ke grup, lalu kirim <code>/chatid</code>. ID grup biasanya mulai dengan <code>-</code>.
-          </p>
+          <div className="text-xs text-muted-foreground mb-3 space-y-2">
+            <p><b>Cara mendapatkan Chat ID:</b></p>
+            <ol className="list-decimal list-inside space-y-1 ml-1">
+              <li>Buka <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="text-[hsl(199,89%,48%)] underline font-medium">@userinfobot</a> di Telegram</li>
+              <li>Tekan <b>Start</b> — bot akan membalas info kamu</li>
+              <li>Copy angka <b>Id</b> yang muncul (contoh: <code>123456789</code>)</li>
+              <li>Paste di kolom bawah ini</li>
+            </ol>
+            <p className="text-muted-foreground/70 italic">
+              Untuk <b>grup</b>: tambahkan <code>@userinfobot</code> ke grup, kirim <code>/start</code>, lalu copy Group ID (mulai dengan <code>-100...</code>).
+            </p>
+          </div>
           <div className="flex gap-2">
             <Input
               value={inputChatId}
