@@ -89,7 +89,9 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
   const currentPrice = ohlcData[ohlcData.length - 1].close;
   const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 
-  const periodDays = {
+  const periodDays: Record<ChartPeriod, number> = {
+    '3D': 3,
+    '1W': 7,
     '1M': 30,
     '3M': 90,
     '6M': 180,
