@@ -18,7 +18,7 @@ import { TelegramSettings } from '@/components/gold/TelegramSettings';
 import { AnimatedPrice } from '@/components/gold/AnimatedPrice';
 import { useGoldPrices } from '@/hooks/useGoldPrices';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Bell, Send } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
