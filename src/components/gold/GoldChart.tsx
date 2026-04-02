@@ -31,7 +31,7 @@ interface GoldChartProps {
 }
 
 type ChartType = 'area' | 'candle' | 'line';
-type ChartPeriod = '1M' | '3M' | '6M' | '1Y';
+type ChartPeriod = '3D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toFixed(2)}`;
