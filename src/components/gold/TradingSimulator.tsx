@@ -45,7 +45,7 @@ interface TradingSimulatorProps {
   telegramChatId?: string;
 }
 
-const INITIAL_BALANCES = [1000, 5000, 10000, 50000, 100000];
+const INITIAL_BALANCES = [1000, 5000, 10000, 25000, 50000, 100000];
 
 export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId }: TradingSimulatorProps) {
   const [balance, setBalance] = useState(10000);
