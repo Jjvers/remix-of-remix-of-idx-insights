@@ -408,7 +408,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: 0.62,
     lagDays: -5,
     lagDescription: 'Leads gold by ~5 days',
-    reasoning: 'Copper dikenal sebagai "Dr. Copper" karena kemampuannya memprediksi kondisi ekonomi global. Ketika copper naik, ini sinyal ekonomi membaik → risk-on → gold bisa melemah. Sebaliknya, copper jatuh = fear → gold rally. Copper saat ini turun 1.15%, ini bisa jadi early warning untuk gold rally dalam 3-7 hari ke depan.',
+    reasoning: 'Copper is known as "Dr. Copper" for its ability to predict global economic conditions. When copper rises, it signals economic improvement → risk-on → gold may weaken. Conversely, copper dropping = fear → gold rallies. Copper is currently down 1.15%, which could be an early warning for a gold rally in 3-7 days.',
     recentPrices: generateCorrelatedPrices(4.2, 30, 0.025)
   },
   {
