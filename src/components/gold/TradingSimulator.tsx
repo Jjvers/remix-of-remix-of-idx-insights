@@ -315,7 +315,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
           {/* Simulation Controls */}
           <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/20 border border-border">
             <div>
-              <Label className="text-xs text-muted-foreground">Kecepatan Simulasi</Label>
+              <Label className="text-xs text-muted-foreground">{t('sim.speed')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] text-muted-foreground">🐢</span>
                 <Slider value={[simSpeed]} onValueChange={v => setSimSpeed(v[0])} min={1} max={100} step={1} className="flex-1" />
