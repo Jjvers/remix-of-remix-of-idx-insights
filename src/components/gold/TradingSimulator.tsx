@@ -323,7 +323,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Volatilitas</Label>
+              <Label className="text-xs text-muted-foreground">{t('sim.volatility')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] text-muted-foreground">Low</span>
                 <Slider value={[volatility]} onValueChange={v => setVolatility(v[0])} min={1} max={100} step={1} className="flex-1" />
