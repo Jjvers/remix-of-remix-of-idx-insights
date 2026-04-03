@@ -171,20 +171,20 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     // Validation
     if (type === 'BUY') {
       if (sl && sl >= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di bawah harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.slBelowBuy')}`, variant: 'destructive' });
         return;
       }
       if (tp && tp <= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di atas harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.tpAboveBuy')}`, variant: 'destructive' });
         return;
       }
     } else {
       if (sl && sl <= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di atas harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.slAboveSell')}`, variant: 'destructive' });
         return;
       }
       if (tp && tp >= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di bawah harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.tpBelowSell')}`, variant: 'destructive' });
         return;
       }
     }
