@@ -178,7 +178,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'Non-Farm Payrolls',
     type: 'NFP',
     date: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'High',
     previous: '256K',
