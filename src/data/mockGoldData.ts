@@ -156,7 +156,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'FOMC Meeting Minutes',
     type: 'Fed Meeting',
     date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    time: '19:00 WIB',
+    time: '14:00 UTC',
     country: 'US',
     impact: 'High',
     description: 'Federal Reserve meeting minutes release. Key for understanding rate path.'
