@@ -396,7 +396,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: 0.87,
     lagDays: -2,
     lagDescription: 'Leads gold by ~2 days',
-    reasoning: 'Silver sering bergerak duluan (leading indicator) karena pasar silver lebih kecil dan lebih volatile. Ketika silver breakout, gold biasanya menyusul 1-3 hari kemudian. Gold-Silver Ratio saat ini di 87.5 — di atas rata-rata historis 80, menunjukkan silver undervalued relatif terhadap gold.',
+    reasoning: 'Silver often moves first (leading indicator) because the silver market is smaller and more volatile. When silver breaks out, gold usually follows 1-3 days later. The Gold-Silver Ratio is currently at 87.5 — above the historical average of 80, suggesting silver is undervalued relative to gold.',
     recentPrices: generateCorrelatedPrices(29.5, 30, 0.02)
   },
   {
