@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument } from '@/types/gold';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Bell, BellRing, Plus, Trash2, TrendingUp, TrendingDown,
@@ -36,10 +38,35 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
   const [newCondition, setNewCondition] = useState<'above' | 'below'>('above');
   const [newMessage, setNewMessage] = useState('');
   const { toast } = useToast();
+  const { t } = useI18n();
+  const { user } = useAuth();
 
   const currentPrice = livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
     : 0;
+
+  // Load alerts from DB
+  useEffect(() => {
+    if (!user) return;
+    const loadAlerts = async () => {
+      const { data } = await supabase
+        .from('price_alerts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (data) {
+        setAlerts(data.map((a: any) => ({
+          id: a.id,
+          instrument: a.instrument as GoldInstrument,
+          targetPrice: Number(a.target_price),
+          condition: a.condition as 'above' | 'below',
+          message: a.message,
+          triggered: a.triggered,
+          createdAt: new Date(a.created_at),
+        })));
+      }
+    };
+    loadAlerts();
+  }, [user]);
 
   const notifyTelegram = async (message: string) => {
     if (!telegramChatId) return;
@@ -78,36 +105,55 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
           `${alert.message ? `\n📝 ${alert.message}` : ''}`
         );
 
+        // Update in DB
+        if (user) {
+          supabase.from('price_alerts').update({ triggered: true, triggered_at: new Date().toISOString() }).eq('id', alert.id).then();
+        }
+
         return { ...alert, triggered: true };
       }
       return alert;
     }));
   }, [currentPrice, selectedInstrument, toast]);
 
-  const addAlert = () => {
+  const addAlert = async () => {
     const price = parseFloat(newPrice);
     if (!price || price <= 0) {
-      toast({ title: 'Harga tidak valid', variant: 'destructive' });
+      toast({ title: t('alerts.invalidPrice'), variant: 'destructive' });
       return;
     }
 
-    const alert: PriceAlert = {
-      id: `ALERT-${Date.now()}`,
-      instrument: selectedInstrument,
-      targetPrice: price,
-      condition: newCondition,
-      message: newMessage || undefined,
-      triggered: false,
-      createdAt: new Date(),
-    };
+    if (user) {
+      const { data, error } = await supabase.from('price_alerts').insert({
+        user_id: user.id,
+        instrument: selectedInstrument,
+        target_price: price,
+        condition: newCondition,
+        message: newMessage || null,
+      }).select().single();
 
-    setAlerts(prev => [alert, ...prev]);
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      const alert: PriceAlert = {
+        id: data.id,
+        instrument: selectedInstrument,
+        targetPrice: price,
+        condition: newCondition,
+        message: newMessage || undefined,
+        triggered: false,
+        createdAt: new Date(),
+      };
+      setAlerts(prev => [alert, ...prev]);
+    }
+
     setNewPrice('');
     setNewMessage('');
-    toast({ title: '✅ Alert Created', description: `${selectedInstrument} ${newCondition} $${price.toFixed(2)}` });
+    toast({ title: `✅ ${t('alerts.created')}`, description: `${selectedInstrument} ${newCondition} $${price.toFixed(2)}` });
   };
 
-  // Quick alert buttons
   const quickAlert = (pct: number, cond: 'above' | 'below') => {
     if (!currentPrice) return;
     const target = cond === 'above'
@@ -117,8 +163,11 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
     setNewCondition(cond);
   };
 
-  const removeAlert = (id: string) => {
+  const removeAlert = async (id: string) => {
     setAlerts(prev => prev.filter(a => a.id !== id));
+    if (user) {
+      await supabase.from('price_alerts').delete().eq('id', id);
+    }
   };
 
   const activeAlerts = alerts.filter(a => !a.triggered);
@@ -129,7 +178,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Bell className="h-5 w-5 text-accent" />
-          Price Alerts
+          {t('alerts.title')}
           {telegramChatId && (
             <Badge variant="outline" className="text-[10px] ml-2">📱 Telegram Active</Badge>
           )}
@@ -140,7 +189,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
         <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Target Price ($)</Label>
+              <Label className="text-xs">{t('alerts.targetPrice')}</Label>
               <Input
                 type="number"
                 value={newPrice}
@@ -150,17 +199,17 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
               />
             </div>
             <div>
-              <Label className="text-xs">Condition</Label>
+              <Label className="text-xs">{t('alerts.condition')}</Label>
               <Select value={newCondition} onValueChange={(v: 'above' | 'below') => setNewCondition(v)}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="above">
-                    <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3 text-[hsl(var(--gain))]" /> Above</span>
+                    <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3 text-[hsl(var(--gain))]" /> {t('alerts.above')}</span>
                   </SelectItem>
                   <SelectItem value="below">
-                    <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3 text-[hsl(var(--loss))]" /> Below</span>
+                    <span className="flex items-center gap-1"><TrendingDown className="h-3 w-3 text-[hsl(var(--loss))]" /> {t('alerts.below')}</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -169,7 +218,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
 
           {/* Quick Alert Buttons */}
           <div className="flex flex-wrap gap-1">
-            <span className="text-[10px] text-muted-foreground self-center mr-1">Quick:</span>
+            <span className="text-[10px] text-muted-foreground self-center mr-1">{t('alerts.quick')}</span>
             {[0.5, 1, 2, 5].map(pct => (
               <Button key={`above-${pct}`} size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-[hsl(var(--gain))]" onClick={() => quickAlert(pct, 'above')}>
                 ↑+{pct}%
@@ -186,11 +235,11 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
             <Input
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
-              placeholder="Alert message (optional)"
+              placeholder={t('alerts.message')}
               className="h-8 text-xs"
             />
             <Button onClick={addAlert} size="sm" className="gap-1 shrink-0">
-              <Plus className="h-4 w-4" /> Add
+              <Plus className="h-4 w-4" /> {t('alerts.add')}
             </Button>
           </div>
         </div>
@@ -198,10 +247,10 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
         {/* Active Alerts */}
         <div>
           <h4 className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
-            <Volume2 className="h-3 w-3" /> Active ({activeAlerts.length})
+            <Volume2 className="h-3 w-3" /> {t('alerts.active')} ({activeAlerts.length})
           </h4>
           {activeAlerts.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-3">Belum ada alert aktif</p>
+            <p className="text-xs text-muted-foreground text-center py-3">{t('alerts.noActive')}</p>
           ) : (
             <div className="space-y-1">
               {activeAlerts.map(alert => {
@@ -217,7 +266,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
                           {alert.instrument} {alert.condition === 'above' ? '≥' : '≤'} ${alert.targetPrice.toFixed(2)}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
-                          {distancePercent >= 0 ? '+' : ''}{distancePercent.toFixed(2)}% dari harga saat ini
+                          {distancePercent >= 0 ? '+' : ''}{distancePercent.toFixed(2)}% {t('alerts.fromCurrent')}
                         </p>
                       </div>
                     </div>
@@ -235,7 +284,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
         {triggeredAlerts.length > 0 && (
           <div>
             <h4 className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3" /> Triggered ({triggeredAlerts.length})
+              <CheckCircle2 className="h-3 w-3" /> {t('alerts.triggered')} ({triggeredAlerts.length})
             </h4>
             <div className="space-y-1">
               {triggeredAlerts.slice(0, 5).map(alert => (
@@ -246,7 +295,7 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
                       {alert.instrument} {alert.condition === 'above' ? '≥' : '≤'} ${alert.targetPrice.toFixed(2)}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-[10px]">Triggered</Badge>
+                  <Badge variant="outline" className="text-[10px]">{t('alerts.triggered')}</Badge>
                 </div>
               ))}
             </div>
