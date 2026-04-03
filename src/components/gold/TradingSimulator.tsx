@@ -384,7 +384,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
             <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/10">
               {/* Current Price Display */}
               <div className="text-center p-2 rounded-lg bg-card border border-border">
-                <p className="text-xs text-muted-foreground">Harga Saat Ini</p>
+                <p className="text-xs text-muted-foreground">{t('sim.currentPrice')}</p>
                 <AnimatedPrice value={currentPrice} decimals={2} className="text-2xl font-bold text-foreground" />
               </div>
 
