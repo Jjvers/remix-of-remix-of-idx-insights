@@ -451,8 +451,8 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                 {openTrades.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-xs">Belum ada posisi terbuka</p>
-                    <p className="text-[10px]">Mulai simulasi dan buka order pertama!</p>
+                    <p className="text-xs">{t('sim.noPositions')}</p>
+                    <p className="text-[10px]">{t('sim.startFirst')}</p>
                   </div>
                 ) : (
                   openTrades.map(trade => {
