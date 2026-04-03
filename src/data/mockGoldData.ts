@@ -166,7 +166,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'US CPI (YoY)',
     type: 'CPI Release',
     date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'High',
     previous: '2.9%',
