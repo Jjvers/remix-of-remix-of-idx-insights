@@ -504,7 +504,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1">
-              <History className="h-4 w-4" /> Riwayat Trading ({closedTrades.length})
+              <History className="h-4 w-4" /> {t('sim.tradeHistory')} ({closedTrades.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
