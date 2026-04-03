@@ -420,7 +420,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: -0.82,
     lagDays: 0,
     lagDescription: 'Inverse correlation (real-time)',
-    reasoning: 'DXY dan gold memiliki korelasi negatif kuat (-0.82). Dollar melemah = gold menguat karena gold dihargai dalam USD. DXY turun 0.31% hari ini — ini BULLISH untuk gold. Perhatikan level DXY 103.0 sebagai support kunci: jika tembus, gold bisa rally tajam.',
+    reasoning: 'DXY and gold have a strong negative correlation (-0.82). Dollar weakens = gold strengthens because gold is priced in USD. DXY is down 0.31% today — this is BULLISH for gold. Watch DXY 103.0 as key support: if broken, gold could rally sharply.',
     recentPrices: generateCorrelatedPrices(104.0, 30, 0.005)
   },
   {
