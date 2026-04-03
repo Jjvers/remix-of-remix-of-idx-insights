@@ -61,6 +61,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [simSpeed, setSimSpeed] = useState(50); // slider 1-100
   const [volatility, setVolatility] = useState(50); // slider 1-100
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const currentPrice = simPrice || (livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
