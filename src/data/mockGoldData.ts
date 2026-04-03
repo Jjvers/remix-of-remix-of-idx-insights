@@ -432,7 +432,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: -0.65,
     lagDays: 1,
     lagDescription: 'Leads gold by ~1 day',
-    reasoning: 'Yield naik = opportunity cost memegang gold lebih tinggi → bearish gold. Namun, jika yield naik karena inflasi (bukan growth), gold tetap bisa naik. Saat ini real yield (10Y - CPI) = 1.45%, masih moderate. Watch for yield curve inversion as recession signal → bullish gold.',
+    reasoning: 'Rising yields = higher opportunity cost of holding gold → bearish gold. However, if yields rise due to inflation (not growth), gold can still rise. Current real yield (10Y - CPI) = 1.45%, still moderate. Watch for yield curve inversion as recession signal → bullish gold.',
     recentPrices: generateCorrelatedPrices(4.3, 30, 0.01)
   }
 ];
