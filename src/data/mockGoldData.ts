@@ -214,7 +214,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'China Manufacturing PMI',
     type: 'PMI',
     date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    time: '08:30 WIB',
+    time: '01:30 UTC',
     country: 'CN',
     impact: 'Medium',
     previous: '50.1',
