@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +61,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [simSpeed, setSimSpeed] = useState(50); // slider 1-100
   const [volatility, setVolatility] = useState(50); // slider 1-100
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const currentPrice = simPrice || (livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
@@ -169,20 +171,20 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     // Validation
     if (type === 'BUY') {
       if (sl && sl >= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di bawah harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.slBelowBuy')}`, variant: 'destructive' });
         return;
       }
       if (tp && tp <= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di atas harga saat ini untuk BUY', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.tpAboveBuy')}`, variant: 'destructive' });
         return;
       }
     } else {
       if (sl && sl <= currentPrice) {
-        toast({ title: '⚠️ Stop Loss harus di atas harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.slAboveSell')}`, variant: 'destructive' });
         return;
       }
       if (tp && tp >= currentPrice) {
-        toast({ title: '⚠️ Take Profit harus di bawah harga saat ini untuk SELL', variant: 'destructive' });
+        toast({ title: `⚠️ ${t('sim.tpBelowSell')}`, variant: 'destructive' });
         return;
       }
     }
@@ -313,7 +315,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
           {/* Simulation Controls */}
           <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/20 border border-border">
             <div>
-              <Label className="text-xs text-muted-foreground">Kecepatan Simulasi</Label>
+              <Label className="text-xs text-muted-foreground">{t('sim.speed')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] text-muted-foreground">🐢</span>
                 <Slider value={[simSpeed]} onValueChange={v => setSimSpeed(v[0])} min={1} max={100} step={1} className="flex-1" />
@@ -321,7 +323,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
               </div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Volatilitas</Label>
+              <Label className="text-xs text-muted-foreground">{t('sim.volatility')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] text-muted-foreground">Low</span>
                 <Slider value={[volatility]} onValueChange={v => setVolatility(v[0])} min={1} max={100} step={1} className="flex-1" />
@@ -382,7 +384,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
             <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/10">
               {/* Current Price Display */}
               <div className="text-center p-2 rounded-lg bg-card border border-border">
-                <p className="text-xs text-muted-foreground">Harga Saat Ini</p>
+                <p className="text-xs text-muted-foreground">{t('sim.currentPrice')}</p>
                 <AnimatedPrice value={currentPrice} decimals={2} className="text-2xl font-bold text-foreground" />
               </div>
 
@@ -449,8 +451,8 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                 {openTrades.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-xs">Belum ada posisi terbuka</p>
-                    <p className="text-[10px]">Mulai simulasi dan buka order pertama!</p>
+                    <p className="text-xs">{t('sim.noPositions')}</p>
+                    <p className="text-[10px]">{t('sim.startFirst')}</p>
                   </div>
                 ) : (
                   openTrades.map(trade => {
@@ -502,7 +504,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1">
-              <History className="h-4 w-4" /> Riwayat Trading ({closedTrades.length})
+              <History className="h-4 w-4" /> {t('sim.tradeHistory')} ({closedTrades.length})
             </CardTitle>
           </CardHeader>
           <CardContent>

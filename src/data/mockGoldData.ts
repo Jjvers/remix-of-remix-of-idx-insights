@@ -156,7 +156,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'FOMC Meeting Minutes',
     type: 'Fed Meeting',
     date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    time: '19:00 WIB',
+    time: '14:00 UTC',
     country: 'US',
     impact: 'High',
     description: 'Federal Reserve meeting minutes release. Key for understanding rate path.'
@@ -166,7 +166,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'US CPI (YoY)',
     type: 'CPI Release',
     date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'High',
     previous: '2.9%',
@@ -178,7 +178,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'Non-Farm Payrolls',
     type: 'NFP',
     date: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'High',
     previous: '256K',
@@ -190,7 +190,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'ECB Interest Rate Decision',
     type: 'Other',
     date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-    time: '20:15 WIB',
+    time: '13:15 UTC',
     country: 'EU',
     impact: 'Medium',
     previous: '3.00%',
@@ -202,7 +202,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'US GDP (QoQ)',
     type: 'GDP',
     date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'Medium',
     previous: '3.1%',
@@ -214,7 +214,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'China Manufacturing PMI',
     type: 'PMI',
     date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-    time: '08:30 WIB',
+    time: '01:30 UTC',
     country: 'CN',
     impact: 'Medium',
     previous: '50.1',
@@ -396,7 +396,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: 0.87,
     lagDays: -2,
     lagDescription: 'Leads gold by ~2 days',
-    reasoning: 'Silver sering bergerak duluan (leading indicator) karena pasar silver lebih kecil dan lebih volatile. Ketika silver breakout, gold biasanya menyusul 1-3 hari kemudian. Gold-Silver Ratio saat ini di 87.5 — di atas rata-rata historis 80, menunjukkan silver undervalued relatif terhadap gold.',
+    reasoning: 'Silver often moves first (leading indicator) because the silver market is smaller and more volatile. When silver breaks out, gold usually follows 1-3 days later. The Gold-Silver Ratio is currently at 87.5 — above the historical average of 80, suggesting silver is undervalued relative to gold.',
     recentPrices: generateCorrelatedPrices(29.5, 30, 0.02)
   },
   {
@@ -408,7 +408,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: 0.62,
     lagDays: -5,
     lagDescription: 'Leads gold by ~5 days',
-    reasoning: 'Copper dikenal sebagai "Dr. Copper" karena kemampuannya memprediksi kondisi ekonomi global. Ketika copper naik, ini sinyal ekonomi membaik → risk-on → gold bisa melemah. Sebaliknya, copper jatuh = fear → gold rally. Copper saat ini turun 1.15%, ini bisa jadi early warning untuk gold rally dalam 3-7 hari ke depan.',
+    reasoning: 'Copper is known as "Dr. Copper" for its ability to predict global economic conditions. When copper rises, it signals economic improvement → risk-on → gold may weaken. Conversely, copper dropping = fear → gold rallies. Copper is currently down 1.15%, which could be an early warning for a gold rally in 3-7 days.',
     recentPrices: generateCorrelatedPrices(4.2, 30, 0.025)
   },
   {
@@ -420,7 +420,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: -0.82,
     lagDays: 0,
     lagDescription: 'Inverse correlation (real-time)',
-    reasoning: 'DXY dan gold memiliki korelasi negatif kuat (-0.82). Dollar melemah = gold menguat karena gold dihargai dalam USD. DXY turun 0.31% hari ini — ini BULLISH untuk gold. Perhatikan level DXY 103.0 sebagai support kunci: jika tembus, gold bisa rally tajam.',
+    reasoning: 'DXY and gold have a strong negative correlation (-0.82). Dollar weakens = gold strengthens because gold is priced in USD. DXY is down 0.31% today — this is BULLISH for gold. Watch DXY 103.0 as key support: if broken, gold could rally sharply.',
     recentPrices: generateCorrelatedPrices(104.0, 30, 0.005)
   },
   {
@@ -432,7 +432,7 @@ export const correlatedAssets: CorrelatedAsset[] = [
     correlation: -0.65,
     lagDays: 1,
     lagDescription: 'Leads gold by ~1 day',
-    reasoning: 'Yield naik = opportunity cost memegang gold lebih tinggi → bearish gold. Namun, jika yield naik karena inflasi (bukan growth), gold tetap bisa naik. Saat ini real yield (10Y - CPI) = 1.45%, masih moderate. Watch for yield curve inversion as recession signal → bullish gold.',
+    reasoning: 'Rising yields = higher opportunity cost of holding gold → bearish gold. However, if yields rise due to inflation (not growth), gold can still rise. Current real yield (10Y - CPI) = 1.45%, still moderate. Watch for yield curve inversion as recession signal → bullish gold.',
     recentPrices: generateCorrelatedPrices(4.3, 30, 0.01)
   }
 ];

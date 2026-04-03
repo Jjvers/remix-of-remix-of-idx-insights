@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GoldPriceCards } from '@/components/gold/GoldPriceCards';
 import { GoldChart } from '@/components/gold/GoldChart';
 import { TechnicalPanel } from '@/components/gold/TechnicalPanel';
@@ -17,8 +18,11 @@ import { PriceAlerts } from '@/components/gold/PriceAlerts';
 import { TelegramSettings } from '@/components/gold/TelegramSettings';
 import { AnimatedPrice } from '@/components/gold/AnimatedPrice';
 import { useGoldPrices } from '@/hooks/useGoldPrices';
+import { useAuth } from '@/hooks/useAuth';
+import { useI18n, type Language } from '@/lib/i18n';
+import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send, LogOut, Globe } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -31,7 +35,9 @@ export default function GoldAnalysis() {
   const [selectedInstrument, setSelectedInstrument] = useState<GoldInstrument>('XAU/USD');
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('1W');
   const { prices: livePrices, isLoading: pricesLoading, refetch: refetchPrices } = useGoldPrices();
-  const [telegramChatId, setTelegramChatId] = useState(() => localStorage.getItem('telegram_chat_id') || '');
+  const [telegramChatId, setTelegramChatId] = useState('');
+  const { user, signOut } = useAuth();
+  const { t, language, setLanguage } = useI18n();
   const [showIndicators, setShowIndicators] = useState({
     sma20: true,
     sma50: true,
@@ -40,6 +46,39 @@ export default function GoldAnalysis() {
     bollinger: false,
     fibonacci: false
   });
+
+  // Load profile data
+  useEffect(() => {
+    if (!user) return;
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('telegram_chat_id, preferred_language, initial_balance')
+        .eq('id', user.id)
+        .single();
+      if (data) {
+        if (data.telegram_chat_id) setTelegramChatId(data.telegram_chat_id);
+        if (data.preferred_language) setLanguage(data.preferred_language as Language);
+      }
+    };
+    loadProfile();
+  }, [user]);
+
+  // Save telegram chat ID to profile
+  const handleChatIdChange = async (id: string) => {
+    setTelegramChatId(id);
+    if (user) {
+      await supabase.from('profiles').update({ telegram_chat_id: id || null }).eq('id', user.id);
+    }
+  };
+
+  // Save language preference
+  const handleLanguageChange = async (lang: Language) => {
+    setLanguage(lang);
+    if (user) {
+      await supabase.from('profiles').update({ preferred_language: lang }).eq('id', user.id);
+    }
+  };
 
   const currentLivePrice = livePrices 
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
@@ -56,7 +95,7 @@ export default function GoldAnalysis() {
                 <div className="p-1.5 rounded-lg bg-accent/20">
                   <Coins className="h-5 w-5 text-accent" />
                 </div>
-                <h1 className="text-lg font-bold text-foreground leading-tight">Gold Analysis</h1>
+                <h1 className="text-lg font-bold text-foreground leading-tight">{t('app.title')}</h1>
               </div>
 
               {livePrices && (
@@ -72,19 +111,39 @@ export default function GoldAnalysis() {
               )}
             </div>
 
-            {/* Timeframe Selector */}
-            <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg">
-              {timeframes.map(tf => (
-                <Button
-                  key={tf.value}
-                  variant={selectedTimeframe === tf.value ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => setSelectedTimeframe(tf.value)}
-                >
-                  {tf.label}
-                </Button>
-              ))}
+            <div className="flex items-center gap-2">
+              {/* Language Switcher */}
+              <Select value={language} onValueChange={(v: Language) => handleLanguageChange(v)}>
+                <SelectTrigger className="w-20 h-8 text-xs">
+                  <Globe className="h-3 w-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">EN</SelectItem>
+                  <SelectItem value="id">ID</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Timeframe Selector */}
+              <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg">
+                {timeframes.map(tf => (
+                  <Button
+                    key={tf.value}
+                    variant={selectedTimeframe === tf.value ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setSelectedTimeframe(tf.value)}
+                  >
+                    {tf.label}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Sign Out */}
+              <Button variant="ghost" size="sm" onClick={signOut} className="h-8 px-2 text-xs gap-1 text-muted-foreground">
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('auth.logout')}</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -96,7 +155,7 @@ export default function GoldAnalysis() {
           <div className="flex items-center gap-4 flex-wrap">
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Settings2 className="h-3.5 w-3.5" />
-              Overlays:
+              {t('header.overlays')}:
             </span>
             
             <div className="flex items-center gap-3">
@@ -149,39 +208,39 @@ export default function GoldAnalysis() {
           <TabsList className="bg-muted/50 flex-wrap">
             <TabsTrigger value="prediction" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">AI Prediction</span>
+              <span className="hidden sm:inline">{t('tab.prediction')}</span>
             </TabsTrigger>
             <TabsTrigger value="simulator" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline">Simulator</span>
+              <span className="hidden sm:inline">{t('tab.simulator')}</span>
             </TabsTrigger>
             <TabsTrigger value="telegram" className="gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Send className="h-4 w-4" />
-              <span className="hidden sm:inline">Telegram & Alerts</span>
+              <span className="hidden sm:inline">{t('tab.telegram')}</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="gap-1.5">
               <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Technical</span>
+              <span className="hidden sm:inline">{t('tab.technical')}</span>
             </TabsTrigger>
             <TabsTrigger value="fundamental" className="gap-1.5">
               <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Fundamental</span>
+              <span className="hidden sm:inline">{t('tab.fundamental')}</span>
             </TabsTrigger>
             <TabsTrigger value="news" className="gap-1.5">
               <Newspaper className="h-4 w-4" />
-              <span className="hidden sm:inline">News</span>
+              <span className="hidden sm:inline">{t('tab.news')}</span>
             </TabsTrigger>
             <TabsTrigger value="calendar" className="gap-1.5">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Calendar</span>
+              <span className="hidden sm:inline">{t('tab.calendar')}</span>
             </TabsTrigger>
             <TabsTrigger value="correlation" className="gap-1.5">
               <Link2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Correlation</span>
+              <span className="hidden sm:inline">{t('tab.correlation')}</span>
             </TabsTrigger>
             <TabsTrigger value="experts" className="gap-1.5">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Experts</span>
+              <span className="hidden sm:inline">{t('tab.experts')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -204,7 +263,7 @@ export default function GoldAnalysis() {
 
           <TabsContent value="telegram" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TelegramSettings chatId={telegramChatId} onChatIdChange={setTelegramChatId} />
+              <TelegramSettings chatId={telegramChatId} onChatIdChange={handleChatIdChange} />
               <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
             </div>
           </TabsContent>
@@ -264,8 +323,8 @@ export default function GoldAnalysis() {
 
       <footer className="border-t border-border mt-8 py-4">
         <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          <p>Data powered by GoldAPI.io. AI predictions are for informational purposes only.</p>
-          <p className="mt-1">Not financial advice. Always do your own research before trading.</p>
+          <p>{t('footer.line1')}</p>
+          <p className="mt-1">{t('footer.line2')}</p>
         </div>
       </footer>
     </div>
