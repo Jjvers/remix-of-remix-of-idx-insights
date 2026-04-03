@@ -202,7 +202,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'US GDP (QoQ)',
     type: 'GDP',
     date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
-    time: '20:30 WIB',
+    time: '13:30 UTC',
     country: 'US',
     impact: 'Medium',
     previous: '3.1%',
