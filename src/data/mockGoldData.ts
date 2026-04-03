@@ -190,7 +190,7 @@ export const economicEvents: EconomicEvent[] = [
     title: 'ECB Interest Rate Decision',
     type: 'Other',
     date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-    time: '20:15 WIB',
+    time: '13:15 UTC',
     country: 'EU',
     impact: 'Medium',
     previous: '3.00%',
