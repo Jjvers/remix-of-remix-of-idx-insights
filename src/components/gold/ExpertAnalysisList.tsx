@@ -1,13 +1,18 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { expertAnalyses } from '@/data/mockGoldData';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useExpertAnalysis } from '@/hooks/useExpertAnalysis';
+import { expertAnalyses as mockExperts } from '@/data/mockGoldData';
 import type { ExpertAnalysis, Signal, GoldInstrument } from '@/types/gold';
 import { formatDistanceToNow } from 'date-fns';
-import { TrendingUp, TrendingDown, Target, Shield, User } from 'lucide-react';
+import { Target, Shield, User, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 interface ExpertAnalysisListProps {
   instrument?: GoldInstrument;
+  goldPrice?: number;
+  silverPrice?: number;
 }
 
 const signalColors: Record<Signal, string> = {
@@ -18,18 +23,15 @@ const signalColors: Record<Signal, string> = {
   'Strong Sell': 'bg-loss text-loss-foreground'
 };
 
-const formatPrice = (price: number, _instrument: GoldInstrument): string => {
+const formatPrice = (price: number): string => {
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
-  const isPositive = expert.signal.includes('Buy');
-
   return (
     <div className="p-4 rounded-lg border border-border hover:border-accent/50 transition-colors">
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={expert.avatarUrl} alt={expert.expertName} />
           <AvatarFallback className="bg-accent/20 text-accent">
             {expert.expertName.split(' ').map(n => n[0]).join('')}
           </AvatarFallback>
@@ -47,21 +49,19 @@ function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-3">
-        {expert.analysis}
-      </p>
+      <p className="text-sm text-muted-foreground mb-3">{expert.analysis}</p>
 
       <div className="flex flex-wrap gap-3 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-sm">
           <Target className="h-4 w-4 text-accent" />
           <span className="text-muted-foreground">Target:</span>
-          <span className="font-mono text-foreground">{formatPrice(expert.targetPrice, expert.instrument)}</span>
+          <span className="font-mono text-foreground">{formatPrice(expert.targetPrice)}</span>
         </div>
         {expert.stopLoss && (
           <div className="flex items-center gap-1.5 text-sm">
             <Shield className="h-4 w-4 text-loss" />
             <span className="text-muted-foreground">Stop:</span>
-            <span className="font-mono text-foreground">{formatPrice(expert.stopLoss, expert.instrument)}</span>
+            <span className="font-mono text-foreground">{formatPrice(expert.stopLoss)}</span>
           </div>
         )}
         <div className="flex items-center gap-1.5 text-sm">
@@ -82,10 +82,19 @@ function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
   );
 }
 
-export function ExpertAnalysisList({ instrument }: ExpertAnalysisListProps) {
+export function ExpertAnalysisList({ instrument, goldPrice, silverPrice }: ExpertAnalysisListProps) {
+  const { analyses: liveAnalyses, isLoading, fetchAnalyses } = useExpertAnalysis();
+
+  useEffect(() => {
+    fetchAnalyses(goldPrice, silverPrice);
+  }, [fetchAnalyses, goldPrice, silverPrice]);
+
+  const hasLive = liveAnalyses.length > 0;
+  const allExperts = hasLive ? liveAnalyses : mockExperts;
+
   const filteredExperts = instrument 
-    ? expertAnalyses.filter(e => e.instrument === instrument)
-    : expertAnalyses;
+    ? allExperts.filter(e => e.instrument === instrument)
+    : allExperts;
 
   const sortedExperts = [...filteredExperts].sort(
     (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()
@@ -98,18 +107,48 @@ export function ExpertAnalysisList({ instrument }: ExpertAnalysisListProps) {
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Expert Analysis
+            {hasLive && (
+              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+                Live
+              </Badge>
+            )}
           </CardTitle>
-          <Badge variant="outline">{sortedExperts.length} analysts</Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => fetchAnalyses(goldPrice, silverPrice)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : hasLive ? (
+                <RefreshCw className="h-3 w-3" />
+              ) : (
+                <Zap className="h-3 w-3" />
+              )}
+              {hasLive ? 'Refresh' : 'Get Live'}
+            </Button>
+            <Badge variant="outline">{sortedExperts.length} analysts</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-          {sortedExperts.map(expert => (
-            <ExpertCard key={expert.id} expert={expert} />
-          ))}
+          {isLoading && !hasLive ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-accent mb-3" />
+              <p className="text-sm text-muted-foreground">Loading expert analyses...</p>
+            </div>
+          ) : (
+            sortedExperts.map(expert => (
+              <ExpertCard key={expert.id} expert={expert} />
+            ))
+          )}
         </div>
 
-        {sortedExperts.length === 0 && (
+        {sortedExperts.length === 0 && !isLoading && (
           <div className="text-center py-8 text-muted-foreground">
             No expert analysis available for this instrument.
           </div>
