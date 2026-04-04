@@ -43,7 +43,6 @@ export default function Auth() {
       } else {
         const { error } = await signUp(email, password, displayName);
         if (error) throw error;
-        setShowConfirm(true);
       }
     } catch (err: any) {
       toast({
