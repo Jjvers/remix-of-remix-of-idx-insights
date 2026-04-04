@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { economicEvents } from '@/data/mockGoldData';
+import { useEconomicCalendar } from '@/hooks/useEconomicCalendar';
+import { economicEvents as mockEvents } from '@/data/mockGoldData';
 import type { EconomicEvent, EventImpact } from '@/types/gold';
-import { format, isToday, isTomorrow, isThisWeek, addDays } from 'date-fns';
-import { Calendar, Clock, MapPin, TrendingUp, AlertCircle } from 'lucide-react';
+import { format, isToday, isTomorrow } from 'date-fns';
+import { Calendar, AlertCircle, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 const impactStyles: Record<EventImpact, string> = {
   'High': 'bg-loss text-loss-foreground',
@@ -73,12 +73,20 @@ function EventCard({ event }: { event: EconomicEvent }) {
 
 export function EconomicCalendar() {
   const [filter, setFilter] = useState<'all' | 'high'>('all');
-  
-  const filteredEvents = economicEvents
+  const { events: liveEvents, isLoading, fetchEvents } = useEconomicCalendar();
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const events = liveEvents.length > 0 ? liveEvents : mockEvents;
+  const hasLive = liveEvents.length > 0;
+
+  const filteredEvents = events
     .filter(e => filter === 'all' || e.impact === 'High')
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const upcomingHigh = economicEvents.filter(e => 
+  const upcomingHigh = events.filter(e => 
     e.impact === 'High' && e.date >= new Date()
   ).length;
 
@@ -89,13 +97,36 @@ export function EconomicCalendar() {
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Economic Calendar
+            {hasLive && (
+              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+                Live
+              </Badge>
+            )}
           </CardTitle>
-          {upcomingHigh > 0 && (
-            <Badge variant="destructive" className="gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {upcomingHigh} High Impact Events
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => fetchEvents()}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : hasLive ? (
+                <RefreshCw className="h-3 w-3" />
+              ) : (
+                <Zap className="h-3 w-3" />
+              )}
+              {hasLive ? 'Refresh' : 'Get Live'}
+            </Button>
+            {upcomingHigh > 0 && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {upcomingHigh} High Impact
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -117,9 +148,16 @@ export function EconomicCalendar() {
         </div>
 
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-          {filteredEvents.map(event => (
-            <EventCard key={event.id} event={event} />
-          ))}
+          {isLoading && liveEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-accent mb-3" />
+              <p className="text-sm text-muted-foreground">Loading economic events...</p>
+            </div>
+          ) : (
+            filteredEvents.map(event => (
+              <EventCard key={event.id} event={event} />
+            ))
+          )}
         </div>
 
         <div className="mt-4 p-3 bg-muted rounded-lg">
