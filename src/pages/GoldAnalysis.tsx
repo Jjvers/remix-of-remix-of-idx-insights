@@ -280,7 +280,7 @@ export default function GoldAnalysis() {
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
               <FundamentalPanel />
             </div>
-            <ExpertAnalysisList instrument={selectedInstrument} />
+            <ExpertAnalysisList instrument={selectedInstrument} goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
           </TabsContent>
 
           <TabsContent value="news" className="space-y-4 mt-4">
