@@ -54,23 +54,6 @@ export default function Auth() {
     }
   };
 
-  if (showConfirm) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-8 text-center space-y-4">
-            <Mail className="h-12 w-12 mx-auto text-accent" />
-            <h2 className="text-xl font-bold">{t('auth.checkEmail')}</h2>
-            <p className="text-muted-foreground">{t('auth.checkEmailDesc')}</p>
-            <Button variant="outline" onClick={() => { setShowConfirm(false); setIsLogin(true); }}>
-              {t('auth.login')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
