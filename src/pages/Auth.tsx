@@ -18,7 +18,6 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   if (loading) {
     return (
@@ -43,7 +42,6 @@ export default function Auth() {
       } else {
         const { error } = await signUp(email, password, displayName);
         if (error) throw error;
-        setShowConfirm(true);
       }
     } catch (err: any) {
       toast({
@@ -55,23 +53,6 @@ export default function Auth() {
       setSubmitting(false);
     }
   };
-
-  if (showConfirm) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-8 text-center space-y-4">
-            <Mail className="h-12 w-12 mx-auto text-accent" />
-            <h2 className="text-xl font-bold">{t('auth.checkEmail')}</h2>
-            <p className="text-muted-foreground">{t('auth.checkEmailDesc')}</p>
-            <Button variant="outline" onClick={() => { setShowConfirm(false); setIsLogin(true); }}>
-              {t('auth.login')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
