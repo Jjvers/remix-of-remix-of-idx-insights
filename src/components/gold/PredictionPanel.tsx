@@ -16,6 +16,7 @@ interface PredictionPanelProps {
   instrument: GoldInstrument;
   timeframe: Timeframe;
   livePrice?: number;
+  ohlcData?: import('@/types/gold').OHLC[];
 }
 
 const signalStyles = {
@@ -120,8 +121,8 @@ function IndicatorReasoningCard({ icon: Icon, label, reasoning, color }: {
   );
 }
 
-export function PredictionPanel({ instrument, timeframe, livePrice }: PredictionPanelProps) {
-  const { prediction, isLoading, error, generatePrediction } = useGoldPrediction(instrument, timeframe, livePrice);
+export function PredictionPanel({ instrument, timeframe, livePrice, ohlcData = [] }: PredictionPanelProps) {
+  const { prediction, isLoading, error, generatePrediction } = useGoldPrediction(instrument, timeframe, livePrice, ohlcData);
 
   if (!prediction && !isLoading) {
     return (

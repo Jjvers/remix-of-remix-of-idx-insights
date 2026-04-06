@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { correlatedAssets } from '@/data/mockGoldData';
+import { Button } from '@/components/ui/button';
+import { generateCorrelatedAssets } from '@/data/dynamicData';
 import type { CorrelatedAsset } from '@/types/gold';
-import { TrendingUp, TrendingDown, Link2, ArrowRight, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Link2, ArrowRight, Info, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 
@@ -105,31 +107,53 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
   );
 }
 
-export function CorrelatedAssets() {
+interface CorrelatedAssetsProps {
+  goldPrice?: number;
+  silverPrice?: number;
+}
+
+export function CorrelatedAssets({ goldPrice = 0, silverPrice = 0 }: CorrelatedAssetsProps) {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const assets = useMemo(() => generateCorrelatedAssets(goldPrice, silverPrice), [goldPrice, silverPrice, refreshKey]);
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Link2 className="h-5 w-5 text-accent" />
-          Correlated Assets
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-xs">
-                  Aset yang berkorelasi dengan gold. Leading indicator bergerak duluan sebelum gold,
-                  sehingga bisa digunakan sebagai sinyal awal untuk memprediksi pergerakan harga emas.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Link2 className="h-5 w-5 text-accent" />
+            Correlated Assets
+            <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+              Live
+            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-xs">
+                    Assets correlated with gold. Leading indicators move before gold,
+                    and can be used as early signals to predict gold price movements.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => setRefreshKey(k => k + 1)}
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {correlatedAssets.map(asset => (
+          {assets.map(asset => (
             <AssetCard key={asset.symbol} asset={asset} />
           ))}
         </div>

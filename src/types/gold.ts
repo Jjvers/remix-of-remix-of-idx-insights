@@ -87,7 +87,7 @@ export interface PatternAnalysis {
 // Signal types
 export type Signal = 'Strong Buy' | 'Buy' | 'Neutral' | 'Sell' | 'Strong Sell';
 export type Trend = 'Bullish' | 'Bearish' | 'Sideways';
-export type Timeframe = '1D' | '1W' | '1M' | '3M';
+export type Timeframe = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 // Correlated Commodities
 export interface CorrelatedAsset {
@@ -174,7 +174,7 @@ export interface ExpertAnalysis {
 
 // Economic Events
 export type EventImpact = 'High' | 'Medium' | 'Low';
-export type EventType = 'Fed Meeting' | 'CPI Release' | 'NFP' | 'GDP' | 'PMI' | 'Retail Sales' | 'Geopolitical' | 'Other';
+export type EventType = 'Fed Meeting' | 'CPI Release' | 'NFP' | 'GDP' | 'PMI' | 'Retail Sales' | 'Geopolitical' | 'Other' | 'Central Bank' | 'Inflation' | 'Employment' | 'Trade' | 'Economic';
 
 export interface EconomicEvent {
   id: string;

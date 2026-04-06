@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useExpertAnalysis } from '@/hooks/useExpertAnalysis';
-import { expertAnalyses as mockExperts } from '@/data/mockGoldData';
+import { generateExpertAnalyses } from '@/data/dynamicData';
 import type { ExpertAnalysis, Signal, GoldInstrument } from '@/types/gold';
 import { formatDistanceToNow } from 'date-fns';
-import { Target, Shield, User, Loader2, RefreshCw, Zap } from 'lucide-react';
+import { Target, Shield, User, RefreshCw } from 'lucide-react';
 
 interface ExpertAnalysisListProps {
   instrument?: GoldInstrument;
@@ -82,15 +81,10 @@ function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
   );
 }
 
-export function ExpertAnalysisList({ instrument, goldPrice, silverPrice }: ExpertAnalysisListProps) {
-  const { analyses: liveAnalyses, isLoading, fetchAnalyses } = useExpertAnalysis();
+export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 }: ExpertAnalysisListProps) {
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchAnalyses(goldPrice, silverPrice);
-  }, [fetchAnalyses, goldPrice, silverPrice]);
-
-  const hasLive = liveAnalyses.length > 0;
-  const allExperts = hasLive ? liveAnalyses : mockExperts;
+  const allExperts = useMemo(() => generateExpertAnalyses(goldPrice, silverPrice), [goldPrice, silverPrice, refreshKey]);
 
   const filteredExperts = instrument 
     ? allExperts.filter(e => e.instrument === instrument)
@@ -107,28 +101,19 @@ export function ExpertAnalysisList({ instrument, goldPrice, silverPrice }: Exper
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Expert Analysis
-            {hasLive && (
-              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-                Live
-              </Badge>
-            )}
+            <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+              Live
+            </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs gap-1"
-              onClick={() => fetchAnalyses(goldPrice, silverPrice)}
-              disabled={isLoading}
+              onClick={() => setRefreshKey(k => k + 1)}
             >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : hasLive ? (
-                <RefreshCw className="h-3 w-3" />
-              ) : (
-                <Zap className="h-3 w-3" />
-              )}
-              {hasLive ? 'Refresh' : 'Get Live'}
+              <RefreshCw className="h-3 w-3" />
+              Refresh
             </Button>
             <Badge variant="outline">{sortedExperts.length} analysts</Badge>
           </div>
@@ -136,19 +121,12 @@ export function ExpertAnalysisList({ instrument, goldPrice, silverPrice }: Exper
       </CardHeader>
       <CardContent>
         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-          {isLoading && !hasLive ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-accent mb-3" />
-              <p className="text-sm text-muted-foreground">Loading expert analyses...</p>
-            </div>
-          ) : (
-            sortedExperts.map(expert => (
-              <ExpertCard key={expert.id} expert={expert} />
-            ))
-          )}
+          {sortedExperts.map(expert => (
+            <ExpertCard key={expert.id} expert={expert} />
+          ))}
         </div>
 
-        {sortedExperts.length === 0 && !isLoading && (
+        {sortedExperts.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No expert analysis available for this instrument.
           </div>

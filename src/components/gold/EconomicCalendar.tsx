@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useEconomicCalendar } from '@/hooks/useEconomicCalendar';
-import { economicEvents as mockEvents } from '@/data/mockGoldData';
+import { generateEconomicCalendar } from '@/data/dynamicData';
 import type { EconomicEvent, EventImpact } from '@/types/gold';
 import { format, isToday, isTomorrow } from 'date-fns';
-import { Calendar, AlertCircle, Loader2, RefreshCw, Zap } from 'lucide-react';
+import { Calendar, AlertCircle, RefreshCw } from 'lucide-react';
 
 const impactStyles: Record<EventImpact, string> = {
   'High': 'bg-loss text-loss-foreground',
@@ -73,14 +72,9 @@ function EventCard({ event }: { event: EconomicEvent }) {
 
 export function EconomicCalendar() {
   const [filter, setFilter] = useState<'all' | 'high'>('all');
-  const { events: liveEvents, isLoading, fetchEvents } = useEconomicCalendar();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
-
-  const events = liveEvents.length > 0 ? liveEvents : mockEvents;
-  const hasLive = liveEvents.length > 0;
+  const events = useMemo(() => generateEconomicCalendar(), [refreshKey]);
 
   const filteredEvents = events
     .filter(e => filter === 'all' || e.impact === 'High')
@@ -97,28 +91,19 @@ export function EconomicCalendar() {
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Economic Calendar
-            {hasLive && (
-              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-                Live
-              </Badge>
-            )}
+            <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
+              Live
+            </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs gap-1"
-              onClick={() => fetchEvents()}
-              disabled={isLoading}
+              onClick={() => setRefreshKey(k => k + 1)}
             >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : hasLive ? (
-                <RefreshCw className="h-3 w-3" />
-              ) : (
-                <Zap className="h-3 w-3" />
-              )}
-              {hasLive ? 'Refresh' : 'Get Live'}
+              <RefreshCw className="h-3 w-3" />
+              Refresh
             </Button>
             {upcomingHigh > 0 && (
               <Badge variant="destructive" className="gap-1">
@@ -148,16 +133,9 @@ export function EconomicCalendar() {
         </div>
 
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-          {isLoading && liveEvents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-accent mb-3" />
-              <p className="text-sm text-muted-foreground">Loading economic events...</p>
-            </div>
-          ) : (
-            filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} />
-            ))
-          )}
+          {filteredEvents.map(event => (
+            <EventCard key={event.id} event={event} />
+          ))}
         </div>
 
         <div className="mt-4 p-3 bg-muted rounded-lg">

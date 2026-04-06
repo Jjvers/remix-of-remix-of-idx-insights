@@ -51,14 +51,26 @@ export default function GoldAnalysis() {
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('telegram_chat_id, preferred_language, initial_balance')
-        .eq('id', user.id)
-        .single();
-      if (data) {
-        if (data.telegram_chat_id) setTelegramChatId(data.telegram_chat_id);
-        if (data.preferred_language) setLanguage(data.preferred_language as Language);
+      // Always check localStorage first (most reliable)
+      const savedChatId = localStorage.getItem(`telegram_chat_id_${user.id}`);
+      if (savedChatId) setTelegramChatId(savedChatId);
+
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('telegram_chat_id, preferred_language, initial_balance')
+          .eq('id', user.id)
+          .single();
+        if (data) {
+          // Supabase chat_id overrides localStorage if available
+          if (data.telegram_chat_id) {
+            setTelegramChatId(data.telegram_chat_id);
+            localStorage.setItem(`telegram_chat_id_${user.id}`, data.telegram_chat_id);
+          }
+          if (data.preferred_language) setLanguage(data.preferred_language as Language);
+        }
+      } catch {
+        // Supabase failed — localStorage already loaded above
       }
     };
     loadProfile();
@@ -68,7 +80,13 @@ export default function GoldAnalysis() {
   const handleChatIdChange = async (id: string) => {
     setTelegramChatId(id);
     if (user) {
-      await supabase.from('profiles').update({ telegram_chat_id: id || null }).eq('id', user.id);
+      // Always save to localStorage as backup
+      localStorage.setItem(`telegram_chat_id_${user.id}`, id);
+      try {
+        await supabase.from('profiles').update({ telegram_chat_id: id || null }).eq('id', user.id);
+      } catch {
+        // Supabase might fail, localStorage is the fallback
+      }
     }
   };
 
@@ -83,6 +101,10 @@ export default function GoldAnalysis() {
   const currentLivePrice = livePrices 
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
     : undefined;
+
+  const historyData = livePrices?.history 
+    ? (selectedInstrument === 'XAU/USD' ? livePrices.history.XAU : livePrices.history.XAG)
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -245,19 +267,19 @@ export default function GoldAnalysis() {
           </TabsList>
 
           <TabsContent value="prediction" className="space-y-4 mt-4">
-            <PredictionPanel instrument={selectedInstrument} timeframe={selectedTimeframe} livePrice={currentLivePrice} />
-            <CorrelatedAssets />
+            <PredictionPanel instrument={selectedInstrument} timeframe={selectedTimeframe} livePrice={currentLivePrice} ohlcData={historyData} />
+            <CorrelatedAssets goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
-              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
+              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
             </div>
           </TabsContent>
 
           <TabsContent value="simulator" className="space-y-4 mt-4">
             <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
-              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
+              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
             </div>
           </TabsContent>
 
@@ -270,8 +292,8 @@ export default function GoldAnalysis() {
 
           <TabsContent value="analysis" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
-              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
+              <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
             </div>
           </TabsContent>
 
@@ -286,7 +308,7 @@ export default function GoldAnalysis() {
           <TabsContent value="news" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
-                <NewsSentiment goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
+                <NewsSentiment goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} changePct={livePrices?.XAU_changePercent} />
               </div>
               <FundamentalPanel />
             </div>
@@ -302,9 +324,9 @@ export default function GoldAnalysis() {
           </TabsContent>
 
           <TabsContent value="correlation" className="space-y-4 mt-4">
-            <CorrelatedAssets />
+            <CorrelatedAssets goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
               <FundamentalPanel />
             </div>
           </TabsContent>
@@ -313,7 +335,7 @@ export default function GoldAnalysis() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ExpertAnalysisList instrument={selectedInstrument} goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
               <div className="space-y-4">
-                <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} />
+                <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
                 <FundamentalPanel />
               </div>
             </div>

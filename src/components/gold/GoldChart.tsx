@@ -4,22 +4,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import type { GoldInstrument } from '@/types/gold';
-import { getOHLCData } from '@/data/mockGoldData';
+import type { GoldInstrument, OHLC } from '@/types/gold';
 import { calculateAllIndicators, calculateEMA, calculateSMA, generateSignal } from '@/lib/technicalIndicators';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Area, ComposedChart, Bar, ReferenceLine, Cell
 } from 'recharts';
 import { format } from 'date-fns';
-import { 
-  TrendingUp, TrendingDown, Maximize2, BarChart2, 
+import {
+  TrendingUp, TrendingDown, Maximize2, BarChart2,
   LineChartIcon, CandlestickChart, Minus, Settings2
 } from 'lucide-react';
 
 interface GoldChartProps {
   instrument: GoldInstrument;
   livePrice?: number;
+  ohlcData?: OHLC[];
   showIndicators?: {
     sma20?: boolean;
     sma50?: boolean;
@@ -41,20 +41,20 @@ const formatPrice = (price: number, _instrument: GoldInstrument): string => {
 const Candlestick = (props: any) => {
   const { x, y, width, height, open, close, high, low, fill, payload, yScale } = props;
   if (!payload || yScale === undefined) return null;
-  
+
   const isUp = close >= open;
   const color = isUp ? 'hsl(var(--gain))' : 'hsl(var(--loss))';
   const candleWidth = Math.max(width * 0.6, 2);
   const wickWidth = 1;
-  
+
   const openY = yScale(open);
   const closeY = yScale(close);
   const highY = yScale(high);
   const lowY = yScale(low);
-  
+
   const bodyTop = Math.min(openY, closeY);
   const bodyHeight = Math.abs(closeY - openY) || 1;
-  
+
   return (
     <g>
       <line
@@ -78,15 +78,14 @@ const Candlestick = (props: any) => {
   );
 };
 
-export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldChartProps) {
+export function GoldChart({ instrument, livePrice, ohlcData = [], showIndicators = {} }: GoldChartProps) {
   const [chartType, setChartType] = useState<ChartType>('area');
   const [period, setPeriod] = useState<ChartPeriod>('1W');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
-  
-  const ohlcData = getOHLCData(instrument, livePrice);
+
   const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
-  const currentPrice = ohlcData[ohlcData.length - 1].close;
+  const currentPrice = livePrice || (ohlcData.length > 0 ? ohlcData[ohlcData.length - 1].close : 0);
   const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 
   const periodDays: Record<ChartPeriod, number> = {
@@ -121,7 +120,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
   const chartData = useMemo(() => {
     const closes = ohlcData.map(d => d.close);
     const days = Math.min(periodDays[period], ohlcData.length);
-    
+
     // Pre-calculate RSI series
     const rsiSeries: (number | null)[] = [];
     for (let i = 0; i < ohlcData.length; i++) {
@@ -153,16 +152,24 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
       const signalVal = macdValues.length >= 9 ? calculateEMA(macdValues, 9) : macdVal;
       macdSeries.push({ macd: macdVal, signal: signalVal, histogram: macdVal - signalVal });
     }
-    
-    return ohlcData.slice(-days).map((candle, index) => {
+
+    const sliced = ohlcData.slice(-days);
+    return sliced.map((candle, index) => {
       const actualIndex = ohlcData.length - days + index;
+      const isLast = index === sliced.length - 1;
+      // Update last candle with live price
+      const candleClose = isLast && livePrice ? livePrice : candle.close;
+      const candleHigh = isLast && livePrice ? Math.max(candle.high, livePrice) : candle.high;
+      const candleLow = isLast && livePrice ? Math.min(candle.low, livePrice) : candle.low;
+
       const priceSlice = closes.slice(0, actualIndex + 1);
-      
-      const sma20 = priceSlice.length >= 20 
-        ? priceSlice.slice(-20).reduce((a, b) => a + b, 0) / 20 
+      if (isLast && livePrice) priceSlice[priceSlice.length - 1] = livePrice;
+
+      const sma20 = priceSlice.length >= 20
+        ? priceSlice.slice(-20).reduce((a, b) => a + b, 0) / 20
         : null;
-      const sma50 = priceSlice.length >= 50 
-        ? priceSlice.slice(-50).reduce((a, b) => a + b, 0) / 50 
+      const sma50 = priceSlice.length >= 50
+        ? priceSlice.slice(-50).reduce((a, b) => a + b, 0) / 50
         : null;
 
       const ema12 = priceSlice.length >= 12 ? calculateEMA(priceSlice, 12) : null;
@@ -182,11 +189,11 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
       return {
         date: format(candle.date, 'MMM dd'),
         fullDate: format(candle.date, 'MMM dd, yyyy'),
-        price: candle.close,
-        high: candle.high,
-        low: candle.low,
+        price: candleClose,
+        high: candleHigh,
+        low: candleLow,
         open: candle.open,
-        close: candle.close,
+        close: candleClose,
         volume: candle.volume,
         sma20,
         sma50,
@@ -198,16 +205,16 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
         macdLine: macdSeries[actualIndex]?.macd ?? null,
         macdSignal: macdSeries[actualIndex]?.signal ?? null,
         macdHist: macdSeries[actualIndex]?.histogram ?? null,
-        isUp: candle.close >= candle.open
+        isUp: candleClose >= candle.open
       };
     });
-  }, [ohlcData, period]);
+  }, [ohlcData, period, livePrice]);
 
-  const priceChange = chartData.length >= 2 
-    ? chartData[chartData.length - 1].price - chartData[0].price 
+  const priceChange = chartData.length >= 2
+    ? chartData[chartData.length - 1].price - chartData[0].price
     : 0;
-  const priceChangePercent = chartData.length >= 2 
-    ? (priceChange / chartData[0].price) * 100 
+  const priceChangePercent = chartData.length >= 2
+    ? (priceChange / chartData[0].price) * 100
     : 0;
 
   const signalColor = {
@@ -271,9 +278,8 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
               <span className="font-mono text-xl font-bold">
                 {formatPrice(currentPrice, instrument)}
               </span>
-              <span className={`flex items-center gap-1 text-sm font-mono ${
-                priceChange >= 0 ? 'text-gain' : 'text-loss'
-              }`}>
+              <span className={`flex items-center gap-1 text-sm font-mono ${priceChange >= 0 ? 'text-gain' : 'text-loss'
+                }`}>
                 {priceChange >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 {priceChange >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
               </span>
@@ -374,19 +380,17 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
           </div>
           {/* Sub-chart toggles */}
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setShowRSI(!showRSI)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                showRSI ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${showRSI ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
             >
               RSI
             </button>
-            <button 
+            <button
               onClick={() => setShowMACD(!showMACD)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                showMACD ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${showMACD ? 'bg-accent/20 text-accent' : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
             >
               MACD
             </button>
@@ -400,22 +404,22 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
             <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="bollingerGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.1}/>
-                  <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.05}/>
+                  <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.1} />
+                  <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickLine={{ stroke: 'hsl(var(--border))' }}
                 interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 domain={['auto', 'auto']}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickLine={{ stroke: 'hsl(var(--border))' }}
@@ -423,7 +427,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                 width={60}
               />
               <Tooltip content={<CustomTooltip />} />
-              
+
               {/* Fibonacci Levels */}
               {showIndicators.fibonacci && (
                 <>
@@ -433,7 +437,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                   <ReferenceLine y={fibLevels.fib618} stroke="hsl(var(--warning))" strokeDasharray="4 4" strokeOpacity={0.6} label={{ value: '61.8%', position: 'right', fill: 'hsl(var(--warning))', fontSize: 9 }} />
                 </>
               )}
-              
+
               {/* Bollinger Bands */}
               {showIndicators.bollinger && (
                 <>
@@ -442,7 +446,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                   <Line type="monotone" dataKey="lowerBand" stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" strokeWidth={1} dot={false} strokeOpacity={0.5} />
                 </>
               )}
-              
+
               {/* Price */}
               {chartType === 'area' && (
                 <Area type="monotone" dataKey="price" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#priceGradient)" />
@@ -469,7 +473,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                   }}
                 />
               )}
-              
+
               {/* Moving Averages */}
               {showIndicators.sma20 && (
                 <Line type="monotone" dataKey="sma20" stroke="hsl(var(--gain))" strokeWidth={1.5} dot={false} name="SMA 20" />
@@ -497,10 +501,9 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
           <div className="mt-1 border-t border-border pt-1">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-muted-foreground font-medium">RSI (14)</span>
-              <span className={`text-[10px] font-mono ${
-                (chartData[chartData.length - 1]?.rsi ?? 50) > 70 ? 'text-loss' :
-                (chartData[chartData.length - 1]?.rsi ?? 50) < 30 ? 'text-gain' : 'text-foreground'
-              }`}>
+              <span className={`text-[10px] font-mono ${(chartData[chartData.length - 1]?.rsi ?? 50) > 70 ? 'text-loss' :
+                  (chartData[chartData.length - 1]?.rsi ?? 50) < 30 ? 'text-gain' : 'text-foreground'
+                }`}>
                 {(chartData[chartData.length - 1]?.rsi ?? 0).toFixed(1)}
               </span>
             </div>
@@ -524,9 +527,8 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
           <div className="mt-1 border-t border-border pt-1">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-muted-foreground font-medium">MACD (12,26,9)</span>
-              <span className={`text-[10px] font-mono ${
-                (chartData[chartData.length - 1]?.macdHist ?? 0) >= 0 ? 'text-gain' : 'text-loss'
-              }`}>
+              <span className={`text-[10px] font-mono ${(chartData[chartData.length - 1]?.macdHist ?? 0) >= 0 ? 'text-gain' : 'text-loss'
+                }`}>
                 {(chartData[chartData.length - 1]?.macdLine ?? 0).toFixed(4)}
               </span>
             </div>

@@ -11,6 +11,23 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      '/api/yahoo': {
+        target: 'https://query1.finance.yahoo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/yahoo/, '')
+      },
+      '/api/stooq': {
+        target: 'https://stooq.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/stooq/, '')
+      },
+      '/api/telegram': {
+        target: 'https://api.telegram.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/telegram/, '')
+      }
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

@@ -2,14 +2,14 @@ import { useMemo, forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import type { GoldInstrument } from '@/types/gold';
-import { getOHLCData } from '@/data/mockGoldData';
+import type { GoldInstrument, OHLC } from '@/types/gold';
 import { calculateAllIndicators, generateSignal } from '@/lib/technicalIndicators';
 import { TrendingUp, TrendingDown, Minus, Activity, BarChart3 } from 'lucide-react';
 
 interface TechnicalPanelProps {
   instrument: GoldInstrument;
   livePrice?: number;
+  ohlcData?: OHLC[];
 }
 
 function IndicatorRow({ 
@@ -107,9 +107,8 @@ function GaugeIndicator({
 }
 
 export const TechnicalPanel = forwardRef<HTMLDivElement, TechnicalPanelProps>(
-  function TechnicalPanel({ instrument, livePrice }, ref) {
-    const ohlcData = getOHLCData(instrument, livePrice);
-    const currentPrice = ohlcData[ohlcData.length - 1].close;
+  function TechnicalPanel({ instrument, livePrice, ohlcData = [] }, ref) {
+    const currentPrice = ohlcData.length > 0 ? ohlcData[ohlcData.length - 1].close : (livePrice || 0);
     const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
     const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 

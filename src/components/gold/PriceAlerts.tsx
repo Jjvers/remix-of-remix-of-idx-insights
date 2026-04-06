@@ -6,11 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useI18n } from '@/lib/i18n';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument } from '@/types/gold';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramMessage } from '@/lib/telegram';
 import {
   Bell, BellRing, Plus, Trash2, TrendingUp, TrendingDown,
   Volume2, CheckCircle2
@@ -37,47 +36,36 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
   const [newPrice, setNewPrice] = useState('');
   const [newCondition, setNewCondition] = useState<'above' | 'below'>('above');
   const [newMessage, setNewMessage] = useState('');
+
   const { toast } = useToast();
   const { t } = useI18n();
-  const { user } = useAuth();
+
+  const STORAGE_KEY = `price_alerts_${selectedInstrument}`;
+
+  // Load alerts from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setAlerts(parsed.map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) })));
+      }
+    } catch {}
+  }, [selectedInstrument]);
+
+  // Persist to localStorage whenever alerts change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(alerts));
+  }, [alerts]);
+
+  const notifyTelegram = async (message: string) => {
+    if (!telegramChatId) return;
+    await sendTelegramMessage(telegramChatId, message);
+  };
 
   const currentPrice = livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
     : 0;
-
-  // Load alerts from DB
-  useEffect(() => {
-    if (!user) return;
-    const loadAlerts = async () => {
-      const { data } = await supabase
-        .from('price_alerts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (data) {
-        setAlerts(data.map((a: any) => ({
-          id: a.id,
-          instrument: a.instrument as GoldInstrument,
-          targetPrice: Number(a.target_price),
-          condition: a.condition as 'above' | 'below',
-          message: a.message,
-          triggered: a.triggered,
-          createdAt: new Date(a.created_at),
-        })));
-      }
-    };
-    loadAlerts();
-  }, [user]);
-
-  const notifyTelegram = async (message: string) => {
-    if (!telegramChatId) return;
-    try {
-      await supabase.functions.invoke('price-alerts', {
-        body: { action: 'notify', alert: { telegramChatId, message } }
-      });
-    } catch (err) {
-      console.error('Telegram notify error:', err);
-    }
-  };
 
   // Check alerts on price change
   useEffect(() => {
@@ -105,11 +93,6 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
           `${alert.message ? `\n📝 ${alert.message}` : ''}`
         );
 
-        // Update in DB
-        if (user) {
-          supabase.from('price_alerts').update({ triggered: true, triggered_at: new Date().toISOString() }).eq('id', alert.id).then();
-        }
-
         return { ...alert, triggered: true };
       }
       return alert;
@@ -123,31 +106,16 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
       return;
     }
 
-    if (user) {
-      const { data, error } = await supabase.from('price_alerts').insert({
-        user_id: user.id,
-        instrument: selectedInstrument,
-        target_price: price,
-        condition: newCondition,
-        message: newMessage || null,
-      }).select().single();
-
-      if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        return;
-      }
-
-      const alert: PriceAlert = {
-        id: data.id,
-        instrument: selectedInstrument,
-        targetPrice: price,
-        condition: newCondition,
-        message: newMessage || undefined,
-        triggered: false,
-        createdAt: new Date(),
-      };
-      setAlerts(prev => [alert, ...prev]);
-    }
+    const alert: PriceAlert = {
+      id: crypto.randomUUID(),
+      instrument: selectedInstrument,
+      targetPrice: price,
+      condition: newCondition,
+      message: newMessage || undefined,
+      triggered: false,
+      createdAt: new Date(),
+    };
+    setAlerts(prev => [alert, ...prev]);
 
     setNewPrice('');
     setNewMessage('');
@@ -163,11 +131,8 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
     setNewCondition(cond);
   };
 
-  const removeAlert = async (id: string) => {
+  const removeAlert = (id: string) => {
     setAlerts(prev => prev.filter(a => a.id !== id));
-    if (user) {
-      await supabase.from('price_alerts').delete().eq('id', id);
-    }
   };
 
   const activeAlerts = alerts.filter(a => !a.triggered);

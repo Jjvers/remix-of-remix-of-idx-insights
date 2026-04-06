@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { OHLC } from '@/types/gold';
 
 export interface LiveGoldPrices {
   XAU: number;
   XAG: number;
   goldSilverRatio: number;
-  // Real OHLC from GoldAPI
   XAU_open: number;
   XAU_high: number;
   XAU_low: number;
@@ -21,9 +20,77 @@ export interface LiveGoldPrices {
   XAG_changePercent: number;
   timestamp: number;
   date: string;
+  history: {
+    XAU: OHLC[];
+    XAG: OHLC[];
+  };
 }
 
-export function useGoldPrices(refreshInterval = 60000) {
+// --- Source 1: Stooq — near real-time SPOT price, no API key, fast refresh ---
+// CSV format: Symbol,Date,Time,Open,High,Low,Close,Volume
+async function fetchSpotPrice(metal: 'XAU' | 'XAG') {
+  const symbol = metal === 'XAU' ? 'xauusd' : 'xagusd';
+  const res = await fetch(`/api/stooq/q/l/?s=${symbol}&f=sd2t2ohlcv&h&e=csv`);
+  if (!res.ok) throw new Error(`Stooq fetch failed for ${metal}: ${res.status}`);
+
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) throw new Error(`Stooq returned no data for ${metal}`);
+
+  // lines[0] = header, lines[1] = data
+  const vals = lines[1].split(',');
+  // Symbol,Date,Time,Open,High,Low,Close,Volume
+  const open = parseFloat(vals[3]);
+  const high = parseFloat(vals[4]);
+  const low = parseFloat(vals[5]);
+  const price = parseFloat(vals[6]); // Close = current price
+
+  // Previous close: use open as proxy (open = previous session close approx)
+  const prevClose = open;
+  const change = price - prevClose;
+  const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+
+  return { price, prevClose, open, high, low, change, changePercent };
+}
+
+// --- Source 2: Yahoo Finance via Vite proxy — historical OHLC shape only ---
+async function fetchYahooHistory(symbol: string): Promise<OHLC[]> {
+  const res = await fetch(`/api/yahoo/v8/finance/chart/${symbol}?interval=1d&range=1y`);
+  if (!res.ok) throw new Error(`Yahoo history failed for ${symbol}: ${res.status}`);
+
+  const body = await res.json();
+  const result = body.chart.result[0];
+  const quote = result.indicators.quote[0];
+
+  return result.timestamp
+    .map((ts: number, i: number) => ({
+      date: new Date(ts * 1000),
+      open: quote.open[i] || 0,
+      high: quote.high[i] || 0,
+      low: quote.low[i] || 0,
+      close: quote.close[i] || 0,
+      volume: quote.volume[i] || 0,
+    }))
+    .filter((c: OHLC) => (c.close as number) > 0);
+}
+
+// Scale history candles so the last close aligns with real spot price
+function scaleHistory(history: OHLC[], spotPrice: number): OHLC[] {
+  if (history.length === 0 || spotPrice === 0) return history;
+  const lastClose = history[history.length - 1].close as number;
+  if (lastClose === 0) return history;
+  const scale = spotPrice / lastClose;
+  return history.map(c => ({
+    date: c.date,
+    open: (c.open as number) * scale,
+    high: (c.high as number) * scale,
+    low: (c.low as number) * scale,
+    close: (c.close as number) * scale,
+    volume: c.volume,
+  }));
+}
+
+export function useGoldPrices(refreshInterval = 10000) {
   const [prices, setPrices] = useState<LiveGoldPrices | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,31 +99,39 @@ export function useGoldPrices(refreshInterval = 60000) {
   const fetchPrices = useCallback(async () => {
     try {
       setError(null);
-      const { data, error: fnError } = await supabase.functions.invoke('gold-prices', {
-        body: { type: 'latest' },
-      });
 
-      if (fnError) throw new Error(fnError.message);
-      if (!data.success) throw new Error(data.error);
+      const [xauSpot, xagSpot, xauHistory, xagHistory] = await Promise.all([
+        fetchSpotPrice('XAU'),
+        fetchSpotPrice('XAG'),
+        fetchYahooHistory('GC=F'),
+        fetchYahooHistory('SI=F'),
+      ]);
+
+      const now = Math.floor(Date.now() / 1000);
+      const todayStr = new Date().toISOString().split('T')[0];
 
       setPrices({
-        XAU: data.prices.XAU,
-        XAG: data.prices.XAG,
-        goldSilverRatio: data.prices.goldSilverRatio,
-        XAU_open: data.prices.XAU_open,
-        XAU_high: data.prices.XAU_high,
-        XAU_low: data.prices.XAU_low,
-        XAU_prev_close: data.prices.XAU_prev_close,
-        XAU_change: data.prices.XAU_change,
-        XAU_changePercent: data.prices.XAU_changePercent,
-        XAG_open: data.prices.XAG_open,
-        XAG_high: data.prices.XAG_high,
-        XAG_low: data.prices.XAG_low,
-        XAG_prev_close: data.prices.XAG_prev_close,
-        XAG_change: data.prices.XAG_change,
-        XAG_changePercent: data.prices.XAG_changePercent,
-        timestamp: data.timestamp,
-        date: data.date,
+        XAU: xauSpot.price,
+        XAG: xagSpot.price,
+        goldSilverRatio: xauSpot.price / xagSpot.price,
+        XAU_open: xauSpot.open,
+        XAU_high: xauSpot.high,
+        XAU_low: xauSpot.low,
+        XAU_prev_close: xauSpot.prevClose,
+        XAU_change: xauSpot.change,
+        XAU_changePercent: xauSpot.changePercent,
+        XAG_open: xagSpot.open,
+        XAG_high: xagSpot.high,
+        XAG_low: xagSpot.low,
+        XAG_prev_close: xagSpot.prevClose,
+        XAG_change: xagSpot.change,
+        XAG_changePercent: xagSpot.changePercent,
+        timestamp: now,
+        date: todayStr,
+        history: {
+          XAU: scaleHistory(xauHistory, xauSpot.price),
+          XAG: scaleHistory(xagHistory, xagSpot.price),
+        },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch gold prices';
@@ -67,19 +142,16 @@ export function useGoldPrices(refreshInterval = 60000) {
     }
   }, []);
 
-  // Simulate per-second price tick between API fetches
+  // Live tick: simulate micro-fluctuation every second between API refreshes
   useEffect(() => {
     if (!prices) return;
     const tickInterval = setInterval(() => {
       setPrices(prev => {
         if (!prev) return prev;
-        // Small random fluctuation to simulate real-time tick
-        const xauVol = prev.XAU * 0.00008; // ~0.008% per tick
-        const xagVol = prev.XAG * 0.00015;
-        const xauChange = (Math.random() - 0.48) * xauVol;
-        const xagChange = (Math.random() - 0.48) * xagVol;
-        const newXAU = prev.XAU + xauChange;
-        const newXAG = prev.XAG + xagChange;
+        const xauDelta = (Math.random() - 0.48) * prev.XAU * 0.00008;
+        const xagDelta = (Math.random() - 0.48) * prev.XAG * 0.00015;
+        const newXAU = prev.XAU + xauDelta;
+        const newXAG = prev.XAG + xagDelta;
         return {
           ...prev,
           XAU: newXAU,
@@ -99,6 +171,7 @@ export function useGoldPrices(refreshInterval = 60000) {
     return () => clearInterval(tickInterval);
   }, [!!prices]);
 
+  // Periodic re-fetch from API for accuracy
   useEffect(() => {
     fetchPrices();
     const interval = setInterval(fetchPrices, refreshInterval);
