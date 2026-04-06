@@ -11,48 +11,44 @@ serve(async (req) => {
   }
 
   try {
-    const METALPRICE_API_KEY = Deno.env.get("METALPRICE_API_KEY");
-    if (!METALPRICE_API_KEY) {
-      throw new Error("METALPRICE_API_KEY is not configured");
-    }
-
     const { type } = await req.json();
 
     if (type === "latest") {
-      const url = `https://api.metalpriceapi.com/v1/latest?api_key=${METALPRICE_API_KEY}&base=USD&currencies=XAU,XAG`;
-      const res = await fetch(url);
+      // Use free api.gold-api.com — no API key required
+      const [xauRes, xagRes] = await Promise.all([
+        fetch("https://api.gold-api.com/price/XAU"),
+        fetch("https://api.gold-api.com/price/XAG"),
+      ]);
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("MetalpriceAPI error:", res.status, errorText);
-        throw new Error(`MetalpriceAPI error: ${res.status} - ${errorText}`);
+      if (!xauRes.ok) {
+        const errorText = await xauRes.text();
+        console.error("Gold API XAU error:", xauRes.status, errorText);
+        throw new Error(`Gold API XAU error: ${xauRes.status}`);
+      }
+      if (!xagRes.ok) {
+        const errorText = await xagRes.text();
+        console.error("Gold API XAG error:", xagRes.status, errorText);
+        throw new Error(`Gold API XAG error: ${xagRes.status}`);
       }
 
-      const data = await res.json();
-      console.log("MetalpriceAPI response:", JSON.stringify(data));
+      const xauData = await xauRes.json();
+      const xagData = await xagRes.json();
 
-      if (!data.success) {
-        throw new Error(`MetalpriceAPI error: ${data.message || "Unknown error"}`);
+      console.log("XAU:", JSON.stringify(xauData));
+      console.log("XAG:", JSON.stringify(xagData));
+
+      const goldPrice = xauData.price;
+      const silverPrice = xagData.price;
+
+      if (!goldPrice || !silverPrice) {
+        throw new Error("Invalid price data from API");
       }
-
-      // MetalpriceAPI returns rates as 1/price (e.g. XAU: 0.00030 means 1 USD = 0.00030 oz)
-      // So gold price per oz = 1 / rate
-      const xauRate = data.rates?.XAU;
-      const xagRate = data.rates?.XAG;
-
-      if (!xauRate || !xagRate) {
-        throw new Error("Invalid rate data from MetalpriceAPI");
-      }
-
-      // Check if there's a USDXAU key (direct price) or compute from inverse
-      const goldPrice = data.rates?.USDXAU || (1 / xauRate);
-      const silverPrice = data.rates?.USDXAG || (1 / xagRate);
 
       const now = Math.floor(Date.now() / 1000);
       const todayStr = new Date().toISOString().split("T")[0];
 
-      // Simulate OHLC from spot price (MetalpriceAPI only gives spot)
-      const xauSpread = goldPrice * 0.003; // ~0.3% spread for OHLC approximation
+      // Approximate OHLC from spot price
+      const xauSpread = goldPrice * 0.003;
       const xagSpread = silverPrice * 0.005;
 
       return new Response(JSON.stringify({
@@ -74,7 +70,7 @@ serve(async (req) => {
           XAG_change: 0,
           XAG_changePercent: 0,
         },
-        timestamp: data.timestamp || now,
+        timestamp: now,
         date: todayStr,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
