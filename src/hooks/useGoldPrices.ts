@@ -23,7 +23,7 @@ export interface LiveGoldPrices {
   date: string;
 }
 
-export function useGoldPrices(refreshInterval = 300000) {
+export function useGoldPrices(refreshInterval = 60000) {
   const [prices, setPrices] = useState<LiveGoldPrices | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
