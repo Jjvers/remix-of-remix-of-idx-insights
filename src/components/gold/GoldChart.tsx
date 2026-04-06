@@ -6,8 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import type { GoldInstrument } from '@/types/gold';
 import { getOHLCData } from '@/data/mockGoldData';
-import { calculateAllIndicators, calculateEMA, generateSignal } from '@/lib/technicalIndicators';
-import { useGoldCandles, type GoldChartPeriod } from '@/hooks/useGoldCandles';
+import { calculateAllIndicators, calculateEMA, calculateSMA, generateSignal } from '@/lib/technicalIndicators';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Area, ComposedChart, Bar, ReferenceLine, Cell
@@ -32,24 +31,10 @@ interface GoldChartProps {
 }
 
 type ChartType = 'area' | 'candle' | 'line';
+type ChartPeriod = '3D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
 const formatPrice = (price: number, _instrument: GoldInstrument): string => {
   return `$${price.toFixed(2)}`;
-};
-
-const formatAxisLabel = (date: Date, period: GoldChartPeriod) => {
-  if (period === '3D' || period === '1W') return format(date, 'dd MMM HH:mm');
-  if (period === '1M' || period === '3M') return format(date, 'dd MMM');
-  return format(date, 'MMM yyyy');
-};
-
-const formatFullDateLabel = (date: Date, period: GoldChartPeriod) => {
-  if (period === '3D' || period === '1W') return format(date, 'MMM dd, yyyy HH:mm');
-  return format(date, 'MMM dd, yyyy');
-};
-
-const formatAxisPrice = (value: number, instrument: GoldInstrument) => {
-  return instrument === 'XAU/USD' ? value.toFixed(0) : value.toFixed(2);
 };
 
 // Custom Candlestick component
@@ -95,15 +80,16 @@ const Candlestick = (props: any) => {
 
 export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldChartProps) {
   const [chartType, setChartType] = useState<ChartType>('area');
-  const [period, setPeriod] = useState<GoldChartPeriod>('1W');
+  const [period, setPeriod] = useState<ChartPeriod>('1W');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
-  const { candles: marketCandles } = useGoldCandles(instrument, period);
+  
+  const ohlcData = getOHLCData(instrument, livePrice);
+  const indicators = useMemo(() => calculateAllIndicators(ohlcData), [ohlcData]);
+  const currentPrice = ohlcData[ohlcData.length - 1].close;
+  const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
 
-  const fallbackData = useMemo(() => getOHLCData(instrument, livePrice), [instrument, livePrice]);
-  const fullOhlcData = marketCandles.length ? marketCandles : fallbackData;
-
-  const periodDays: Record<GoldChartPeriod, number> = {
+  const periodDays: Record<ChartPeriod, number> = {
     '3D': 3,
     '1W': 7,
     '1M': 30,
@@ -112,24 +98,10 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
     '1Y': 365
   };
 
-  const ohlcData = useMemo(() => {
-    if (!fullOhlcData.length) return fullOhlcData;
-
-    const lastDate = fullOhlcData[fullOhlcData.length - 1].date;
-    const visibleStart = new Date(lastDate);
-    visibleStart.setDate(visibleStart.getDate() - periodDays[period]);
-
-    const filtered = fullOhlcData.filter((candle) => candle.date >= visibleStart);
-    return filtered.length ? filtered : fullOhlcData;
-  }, [fullOhlcData, period]);
-
-  const indicators = useMemo(() => calculateAllIndicators(fullOhlcData), [fullOhlcData]);
-  const currentPrice = fullOhlcData[fullOhlcData.length - 1]?.close ?? 0;
-  const signalResult = useMemo(() => generateSignal(indicators, currentPrice), [indicators, currentPrice]);
-
   // Fibonacci levels
   const fibLevels = useMemo(() => {
-    const slice = ohlcData.length ? ohlcData : fullOhlcData;
+    const days = Math.min(periodDays[period], ohlcData.length);
+    const slice = ohlcData.slice(-days);
     const highs = slice.map(d => d.high);
     const lows = slice.map(d => d.low);
     const high = Math.max(...highs);
@@ -147,12 +119,12 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
 
   // Prepare chart data with EMA
   const chartData = useMemo(() => {
-    const closes = fullOhlcData.map(d => d.close);
-    const visibleCount = ohlcData.length;
+    const closes = ohlcData.map(d => d.close);
+    const days = Math.min(periodDays[period], ohlcData.length);
     
     // Pre-calculate RSI series
     const rsiSeries: (number | null)[] = [];
-    for (let i = 0; i < fullOhlcData.length; i++) {
+    for (let i = 0; i < ohlcData.length; i++) {
       if (i < 14) { rsiSeries.push(null); continue; }
       const slice = closes.slice(0, i + 1);
       const changes = [];
@@ -168,7 +140,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
     // Pre-calculate MACD series
     const macdSeries: { macd: number | null; signal: number | null; histogram: number | null }[] = [];
     const macdValues: number[] = [];
-    for (let i = 0; i < fullOhlcData.length; i++) {
+    for (let i = 0; i < ohlcData.length; i++) {
       if (i < 25) {
         macdSeries.push({ macd: null, signal: null, histogram: null });
         continue;
@@ -182,8 +154,8 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
       macdSeries.push({ macd: macdVal, signal: signalVal, histogram: macdVal - signalVal });
     }
     
-    return ohlcData.map((candle, index) => {
-      const actualIndex = fullOhlcData.length - visibleCount + index;
+    return ohlcData.slice(-days).map((candle, index) => {
+      const actualIndex = ohlcData.length - days + index;
       const priceSlice = closes.slice(0, actualIndex + 1);
       
       const sma20 = priceSlice.length >= 20 
@@ -208,8 +180,8 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
       }
 
       return {
-        date: formatAxisLabel(candle.date, period),
-        fullDate: formatFullDateLabel(candle.date, period),
+        date: format(candle.date, 'MMM dd'),
+        fullDate: format(candle.date, 'MMM dd, yyyy'),
         price: candle.close,
         high: candle.high,
         low: candle.low,
@@ -229,7 +201,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
         isUp: candle.close >= candle.open
       };
     });
-  }, [fullOhlcData, ohlcData, period]);
+  }, [ohlcData, period]);
 
   const priceChange = chartData.length >= 2 
     ? chartData[chartData.length - 1].price - chartData[0].price 
@@ -447,7 +419,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                 domain={['auto', 'auto']}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickLine={{ stroke: 'hsl(var(--border))' }}
-                tickFormatter={(value) => formatAxisPrice(value, instrument)}
+                tickFormatter={(value) => value.toFixed(0)}
                 width={60}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -488,8 +460,7 @@ export function GoldChart({ instrument, livePrice, showIndicators = {} }: GoldCh
                     const minPrice = Math.min(...chartData.map(d => d.low));
                     const maxPrice = Math.max(...chartData.map(d => d.high));
                     const chartHeight = mainChartHeight - 30;
-                    const priceRange = Math.max(maxPrice - minPrice, 0.000001);
-                    const yScale = (price: number) => ((maxPrice - price) / priceRange) * chartHeight + 10;
+                    const yScale = (price: number) => ((maxPrice - price) / (maxPrice - minPrice)) * chartHeight + 10;
                     return (
                       <Candlestick key={index} x={x} y={y} width={width} height={0}
                         open={payload.open} close={payload.close} high={payload.high} low={payload.low}
