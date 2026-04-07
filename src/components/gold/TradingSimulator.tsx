@@ -75,10 +75,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     
     try {
       let saved = localStorage.getItem(storageKey);
-      // Migration from legacy global state
-      if (!saved && scopeId !== 'guest') {
-        saved = localStorage.getItem('trading_sim_state');
-      }
 
       if (saved) {
         const parsed = JSON.parse(saved);
