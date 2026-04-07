@@ -51,9 +51,40 @@ interface TradingSimulatorProps {
 const INITIAL_BALANCES = [1000, 5000, 10000, 25000, 50000, 100000];
 
 export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId, userId }: TradingSimulatorProps) {
-  const [balance, setBalance] = useState(10000);
-  const [initialBalance, setInitialBalance] = useState(10000);
-  const [trades, setTrades] = useState<SimTrade[]>([]);
+  const getSavedState = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('trading_sim_state');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to load sim state', e);
+      }
+    }
+    return null;
+  };
+
+  const [balance, setBalance] = useState<number>(() => {
+    const state = getSavedState();
+    return state?.balance ?? 10000;
+  });
+  
+  const [initialBalance, setInitialBalance] = useState<number>(() => {
+    const state = getSavedState();
+    return state?.initialBalance ?? 10000;
+  });
+  
+  const [trades, setTrades] = useState<SimTrade[]>(() => {
+    const state = getSavedState();
+    if (state?.trades) {
+      return state.trades.map((t: any) => ({
+        ...t,
+        openedAt: new Date(t.openedAt),
+        closedAt: t.closedAt ? new Date(t.closedAt) : undefined
+      }));
+    }
+    return [];
+  });
+
   const [units, setUnits] = useState(1);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
@@ -64,28 +95,6 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [volatility, setVolatility] = useState(50); // slider 1-100
   const { toast } = useToast();
   const { t } = useI18n();
-
-  // Load simulator state from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('trading_sim_state');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.balance) setBalance(parsed.balance);
-        if (parsed.initialBalance) setInitialBalance(parsed.initialBalance);
-        if (parsed.trades) {
-          setTrades(parsed.trades.map((t: any) => ({
-            ...t,
-            openedAt: new Date(t.openedAt),
-            closedAt: t.closedAt ? new Date(t.closedAt) : undefined
-          })));
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load sim state', e);
-    }
-  }, []);
-
   // Save simulator state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('trading_sim_state', JSON.stringify({
