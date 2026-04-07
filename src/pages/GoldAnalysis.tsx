@@ -286,7 +286,7 @@ export default function GoldAnalysis() {
           <TabsContent value="telegram" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <TelegramSettings chatId={telegramChatId} onChatIdChange={handleChatIdChange} />
-              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
+              <PriceAlerts livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} userId={user?.id} />
             </div>
           </TabsContent>
 

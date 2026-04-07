@@ -29,10 +29,12 @@ interface PriceAlertsProps {
   livePrices?: LiveGoldPrices | null;
   selectedInstrument: GoldInstrument;
   telegramChatId?: string;
+  userId?: string;
 }
 
-export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: PriceAlertsProps) {
+export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId, userId }: PriceAlertsProps) {
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [newPrice, setNewPrice] = useState('');
   const [newCondition, setNewCondition] = useState<'above' | 'below'>('above');
   const [newMessage, setNewMessage] = useState('');
@@ -40,7 +42,8 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
   const { toast } = useToast();
   const { t } = useI18n();
 
-  const STORAGE_KEY = `price_alerts_${selectedInstrument}`;
+  const scopeId = userId || 'guest';
+  const STORAGE_KEY = `price_alerts_${selectedInstrument}_${scopeId}`;
 
   // Load alerts from localStorage
   useEffect(() => {
@@ -49,14 +52,21 @@ export function PriceAlerts({ livePrices, selectedInstrument, telegramChatId }: 
       if (saved) {
         const parsed = JSON.parse(saved);
         setAlerts(parsed.map((a: any) => ({ ...a, createdAt: new Date(a.createdAt) })));
+      } else {
+        setAlerts([]);
       }
-    } catch {}
-  }, [selectedInstrument]);
+    } catch {
+      setAlerts([]);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [STORAGE_KEY]);
 
   // Persist to localStorage whenever alerts change
   useEffect(() => {
+    if (!isLoaded) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(alerts));
-  }, [alerts]);
+  }, [alerts, isLoaded, STORAGE_KEY]);
 
   const notifyTelegram = async (message: string) => {
     if (!telegramChatId) return;
