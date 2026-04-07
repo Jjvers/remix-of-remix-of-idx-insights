@@ -57,6 +57,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [units, setUnits] = useState(1);
+  const [tradeDirection, setTradeDirection] = useState<'BUY' | 'SELL'>('BUY');
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
@@ -309,15 +310,21 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
     setIsSimulating(false);
   };
 
-  // Quick SL/TP buttons
+  // Quick SL/TP buttons — direction-aware
   const quickSL = (pct: number) => {
     if (!currentPrice) return;
-    const sl = currentPrice * (1 - pct / 100);
+    // BUY: SL is below entry | SELL: SL is above entry
+    const sl = tradeDirection === 'BUY'
+      ? currentPrice * (1 - pct / 100)
+      : currentPrice * (1 + pct / 100);
     setStopLoss(sl.toFixed(2));
   };
   const quickTP = (pct: number) => {
     if (!currentPrice) return;
-    const tp = currentPrice * (1 + pct / 100);
+    // BUY: TP is above entry | SELL: TP is below entry
+    const tp = tradeDirection === 'BUY'
+      ? currentPrice * (1 + pct / 100)
+      : currentPrice * (1 - pct / 100);
     setTakeProfit(tp.toFixed(2));
   };
 
@@ -458,7 +465,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
 
               {/* Units with +/- */}
               <div>
-                <Label className="text-xs">Units</Label>
+                <Label className="text-xs">Units (Lot)</Label>
                 <div className="flex items-center gap-1 mt-1">
                   <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => setUnits(Math.max(1, units - 1))}>
                     <Minus className="h-3 w-3" />
@@ -472,35 +479,40 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
 
               {/* Stop Loss */}
               <div>
-                <Label className="text-xs flex items-center gap-1"><Shield className="h-3 w-3" /> Stop Loss</Label>
+                <Label className="text-xs flex items-center gap-1">
+                  <Shield className="h-3 w-3" /> Stop Loss
+                  <span className="text-muted-foreground text-[10px]">(harga jual rugi otomatis)</span>
+                </Label>
                 <Input type="number" value={stopLoss} onChange={e => setStopLoss(e.target.value)} placeholder="Optional" className="h-8 font-mono mt-1" />
                 <div className="flex gap-1 mt-1">
                   {[0.5, 1, 2, 5].map(pct => (
-                    <Button key={pct} size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => quickSL(pct)}>-{pct}%</Button>
+                    <Button key={pct} size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-[hsl(var(--loss))]" onClick={() => quickSL(pct)}>-{pct}%</Button>
                   ))}
                 </div>
               </div>
 
               {/* Take Profit */}
               <div>
-                <Label className="text-xs flex items-center gap-1"><Target className="h-3 w-3" /> Take Profit</Label>
+                <Label className="text-xs flex items-center gap-1">
+                  <Target className="h-3 w-3" /> Take Profit
+                  <span className="text-muted-foreground text-[10px]">(harga jual untung otomatis)</span>
+                </Label>
                 <Input type="number" value={takeProfit} onChange={e => setTakeProfit(e.target.value)} placeholder="Optional" className="h-8 font-mono mt-1" />
                 <div className="flex gap-1 mt-1">
                   {[0.5, 1, 2, 5].map(pct => (
-                    <Button key={pct} size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => quickTP(pct)}>+{pct}%</Button>
+                    <Button key={pct} size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-[hsl(var(--gain))]" onClick={() => quickTP(pct)}>+{pct}%</Button>
                   ))}
                 </div>
               </div>
 
-              {/* Buy/Sell Buttons */}
-              <div className="flex gap-2">
-                <Button onClick={() => executeTrade('BUY')} className="flex-1 bg-[hsl(var(--gain))] hover:bg-[hsl(var(--gain))]/80 text-white gap-1 h-10">
-                  <ArrowUpRight className="h-4 w-4" /> BUY
-                </Button>
-                <Button onClick={() => executeTrade('SELL')} className="flex-1 bg-[hsl(var(--loss))] hover:bg-[hsl(var(--loss))]/80 text-white gap-1 h-10">
-                  <ArrowDownRight className="h-4 w-4" /> SELL
-                </Button>
-              </div>
+              {/* BUY Button — Close button on position card = SELL */}
+              <Button
+                onClick={() => executeTrade('BUY')}
+                className="w-full bg-[hsl(var(--gain))] hover:bg-[hsl(var(--gain))]/80 text-white gap-2 h-11 text-base font-bold"
+              >
+                <ArrowUpRight className="h-5 w-5" /> BUY
+              </Button>
+              <p className="text-[10px] text-muted-foreground text-center">Klik <strong>Close</strong> di posisi terbuka untuk menjual (SELL)</p>
             </div>
 
             {/* Open Positions */}
@@ -552,8 +564,8 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
                                 {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
                               </p>
                             </div>
-                            <Button size="sm" variant="outline" onClick={() => closeTrade(trade.id)} className="h-7 px-2 text-xs">
-                              Close
+                            <Button size="sm" variant="outline" onClick={() => closeTrade(trade.id)} className="h-7 px-3 text-xs border-[hsl(var(--loss))]/50 text-[hsl(var(--loss))] hover:bg-[hsl(var(--loss))]/10">
+                              SELL
                             </Button>
                           </div>
                         </div>
