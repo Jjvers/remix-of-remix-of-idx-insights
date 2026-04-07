@@ -18,6 +18,12 @@ export interface LiveGoldPrices {
   XAG_prev_close: number;
   XAG_change: number;
   XAG_changePercent: number;
+  // Correlated Assets
+  dxy: { price: number; changePercent: number; history: number[] };
+  btc: { price: number; changePercent: number; history: number[] };
+  oil: { price: number; changePercent: number; history: number[] };
+  yield10y: { price: number; changePercent: number; history: number[] };
+  vix: { price: number; changePercent: number; history: number[] };
   timestamp: number;
   date: string;
   history: {
@@ -74,6 +80,35 @@ async function fetchYahooHistory(symbol: string): Promise<OHLC[]> {
     .filter((c: OHLC) => (c.close as number) > 0);
 }
 
+// --- Source 3: Generic Asset Fetcher (Yahoo) ---
+async function fetchYahooAsset(symbol: string) {
+  const res = await fetch(`/api/yahoo/v8/finance/chart/${symbol}?interval=1d&range=1mo`);
+  if (!res.ok) throw new Error(`Yahoo fetch failed for ${symbol}: ${res.status}`);
+
+  const body = await res.json();
+  const result = body.chart.result[0];
+  const meta = result.meta;
+  const quote = result.indicators.quote[0].close || [];
+
+  const price = meta.regularMarketPrice || meta.chartPreviousClose || 0;
+  const prevClose = meta.previousClose || meta.chartPreviousClose || price;
+  
+  // Calculate change percent safely
+  let changePercent = 0;
+  if (prevClose !== 0) {
+    changePercent = ((price - prevClose) / prevClose) * 100;
+  }
+
+  // Last 15 days of closing prices (or whatever is available) for sparkline
+  const history = quote.filter((v: any) => v != null).slice(-15);
+
+  return { 
+    price: price || (history.length > 0 ? history[history.length - 1] : 0), 
+    changePercent: isNaN(changePercent) ? 0 : changePercent, 
+    history 
+  };
+}
+
 // Scale history candles so the last close aligns with real spot price
 function scaleHistory(history: OHLC[], spotPrice: number): OHLC[] {
   if (history.length === 0 || spotPrice === 0) return history;
@@ -100,11 +135,16 @@ export function useGoldPrices(refreshInterval = 10000) {
     try {
       setError(null);
 
-      const [xauSpot, xagSpot, xauHistory, xagHistory] = await Promise.all([
+      const [xauSpot, xagSpot, xauHistory, xagHistory, dxyData, btcData, oilData, yieldData, vixData] = await Promise.all([
         fetchSpotPrice('XAU'),
         fetchSpotPrice('XAG'),
         fetchYahooHistory('GC=F'),
         fetchYahooHistory('SI=F'),
+        fetchYahooAsset('DX-Y.NYB'),
+        fetchYahooAsset('BTC-USD'),
+        fetchYahooAsset('CL=F'),
+        fetchYahooAsset('^TNX'),
+        fetchYahooAsset('^VIX'),
       ]);
 
       const now = Math.floor(Date.now() / 1000);
@@ -126,6 +166,12 @@ export function useGoldPrices(refreshInterval = 10000) {
         XAG_prev_close: xagSpot.prevClose,
         XAG_change: xagSpot.change,
         XAG_changePercent: xagSpot.changePercent,
+        // Live Correlated Assets
+        dxy: dxyData,
+        btc: btcData,
+        oil: oilData,
+        yield10y: yieldData,
+        vix: vixData,
         timestamp: now,
         date: todayStr,
         history: {
@@ -150,8 +196,12 @@ export function useGoldPrices(refreshInterval = 10000) {
         if (!prev) return prev;
         const xauDelta = (Math.random() - 0.48) * prev.XAU * 0.00008;
         const xagDelta = (Math.random() - 0.48) * prev.XAG * 0.00015;
+        const btcDelta = (Math.random() - 0.48) * prev.btc.price * 0.0001;
+        const dxyDelta = (Math.random() - 0.48) * prev.dxy.price * 0.00005;
+
         const newXAU = prev.XAU + xauDelta;
         const newXAG = prev.XAG + xagDelta;
+
         return {
           ...prev,
           XAU: newXAU,
@@ -165,6 +215,8 @@ export function useGoldPrices(refreshInterval = 10000) {
           XAU_changePercent: ((newXAU - prev.XAU_prev_close) / prev.XAU_prev_close) * 100,
           XAG_change: newXAG - prev.XAG_prev_close,
           XAG_changePercent: ((newXAG - prev.XAG_prev_close) / prev.XAG_prev_close) * 100,
+          btc: { ...prev.btc, price: prev.btc.price + btcDelta },
+          dxy: { ...prev.dxy, price: prev.dxy.price + dxyDelta },
         };
       });
     }, 1000);

@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { generateCorrelatedAssets } from '@/data/dynamicData';
+import { type LiveGoldPrices } from '@/hooks/useGoldPrices';
 import type { CorrelatedAsset } from '@/types/gold';
 import { TrendingUp, TrendingDown, Link2, ArrowRight, Info, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 
 function MiniSparkline({ prices, isPositive }: { prices: number[]; isPositive: boolean }) {
-  const data = prices.slice(-15).map((p, i) => ({ v: p }));
+  const data = prices.filter(p => !isNaN(p)).map((p) => ({ v: p }));
   return (
     <div className="w-20 h-8">
       <ResponsiveContainer width="100%" height="100%">
@@ -54,8 +54,7 @@ function CorrelationBar({ value }: { value: number }) {
 }
 
 function AssetCard({ asset }: { asset: CorrelatedAsset }) {
-  const isPositive = asset.changePercent >= 0;
-  const isLeading = asset.lagDays < 0;
+  const isPositive = (asset.changePercent || 0) >= 0;
 
   return (
     <div className="p-4 rounded-xl bg-card border border-border hover:border-accent/30 transition-colors">
@@ -63,12 +62,6 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-sm font-bold text-foreground">{asset.symbol}</span>
-            <Badge
-              variant="outline"
-              className={`text-[10px] ${isLeading ? 'bg-accent/10 text-accent border-accent/30' : 'bg-muted text-muted-foreground'}`}
-            >
-              {isLeading ? '🔮 Leading' : '📊 Lagging'}
-            </Badge>
           </div>
           <span className="text-xs text-muted-foreground">{asset.name}</span>
         </div>
@@ -81,7 +74,7 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
         </span>
         <span className={`flex items-center gap-1 text-sm font-mono ${isPositive ? 'text-gain' : 'text-loss'}`}>
           {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-          {isPositive ? '+' : ''}{asset.changePercent.toFixed(2)}%
+          {isPositive ? '+' : ''}{(asset.changePercent || 0).toFixed(2)}%
         </span>
       </div>
 
@@ -89,10 +82,6 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Correlation w/ Gold</span>
           <CorrelationBar value={asset.correlation} />
-        </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <ArrowRight className="h-3 w-3" />
-          <span>{asset.lagDescription}</span>
         </div>
       </div>
 
@@ -108,13 +97,60 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
 }
 
 interface CorrelatedAssetsProps {
-  goldPrice?: number;
-  silverPrice?: number;
+  livePrices?: LiveGoldPrices | null;
+  onRefresh?: () => void;
 }
 
-export function CorrelatedAssets({ goldPrice = 0, silverPrice = 0 }: CorrelatedAssetsProps) {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const assets = useMemo(() => generateCorrelatedAssets(goldPrice, silverPrice), [goldPrice, silverPrice, refreshKey]);
+export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProps) {
+  const assets = useMemo(() => {
+    if (!livePrices) return [];
+
+    const goldPrice = livePrices.XAU;
+
+    const data: CorrelatedAsset[] = [
+      {
+        symbol: 'DXY',
+        name: 'US Dollar Index',
+        price: livePrices.dxy.price,
+        change: 0,
+        changePercent: livePrices.dxy.changePercent,
+        correlation: -0.82,
+        reasoning: `Dollar index at ${livePrices.dxy.price.toFixed(2)} — inverse relationship with gold. When DXY drops, gold at $${goldPrice.toFixed(0)} typically rises.`,
+        recentPrices: livePrices.dxy.history,
+      },
+      {
+        symbol: 'UST10Y',
+        name: 'US 10-Year Treasury Yield',
+        price: livePrices.yield10y.price,
+        change: 0,
+        changePercent: livePrices.yield10y.changePercent,
+        correlation: -0.65,
+        reasoning: `10Y yield at ${livePrices.yield10y.price.toFixed(2)}%. Rising real yields pressure gold by increasing the opportunity cost of non-yielding assets.`,
+        recentPrices: livePrices.yield10y.history,
+      },
+      {
+        symbol: 'CL=F',
+        name: 'Crude Oil (WTI)',
+        price: livePrices.oil.price,
+        change: 0,
+        changePercent: livePrices.oil.changePercent,
+        correlation: 0.35,
+        reasoning: `Oil at $${livePrices.oil.price.toFixed(2)} reflects energy inflation expectations. Higher oil ➜ gold demand as inflation hedge.`,
+        recentPrices: livePrices.oil.history,
+      },
+      {
+        symbol: 'BTC-USD',
+        name: 'Bitcoin',
+        price: livePrices.btc.price,
+        change: 0,
+        changePercent: livePrices.btc.changePercent,
+        correlation: 0.25,
+        reasoning: `Bitcoin at $${livePrices.btc.price.toFixed(0)} competes with gold at $${goldPrice.toFixed(0)} for "digital gold" narrative.`,
+        recentPrices: livePrices.btc.history,
+      },
+    ];
+    return data;
+  }, [livePrices]);
 
   return (
     <Card>
@@ -144,7 +180,7 @@ export function CorrelatedAssets({ goldPrice = 0, silverPrice = 0 }: CorrelatedA
             variant="outline"
             size="sm"
             className="h-7 text-xs gap-1"
-            onClick={() => setRefreshKey(k => k + 1)}
+            onClick={onRefresh}
           >
             <RefreshCw className="h-3 w-3" />
             Refresh

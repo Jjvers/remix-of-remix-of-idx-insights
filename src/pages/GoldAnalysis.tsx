@@ -282,7 +282,7 @@ export default function GoldAnalysis() {
 
           <TabsContent value="prediction" className="space-y-4 mt-4">
             <PredictionPanel instrument={selectedInstrument} timeframe={selectedTimeframe} livePrice={currentLivePrice} ohlcData={historyData} />
-            <CorrelatedAssets goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
+            <CorrelatedAssets livePrices={livePrices} onRefresh={refetchPrices} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
               <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
@@ -314,7 +314,7 @@ export default function GoldAnalysis() {
           <TabsContent value="fundamental" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
-              <FundamentalPanel />
+              <FundamentalPanel livePrices={livePrices} />
             </div>
             <ExpertAnalysisList instrument={selectedInstrument} goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
           </TabsContent>
@@ -324,7 +324,7 @@ export default function GoldAnalysis() {
               <div className="lg:col-span-2">
                 <NewsSentiment goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} changePct={livePrices?.XAU_changePercent} />
               </div>
-              <FundamentalPanel />
+              <FundamentalPanel livePrices={livePrices} />
             </div>
           </TabsContent>
 
@@ -333,15 +333,15 @@ export default function GoldAnalysis() {
               <div className="lg:col-span-2">
                 <EconomicCalendar />
               </div>
-              <FundamentalPanel />
+              <FundamentalPanel livePrices={livePrices} />
             </div>
           </TabsContent>
 
           <TabsContent value="correlation" className="space-y-4 mt-4">
-            <CorrelatedAssets goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
+            <CorrelatedAssets livePrices={livePrices} onRefresh={refetchPrices} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
-              <FundamentalPanel />
+              <FundamentalPanel livePrices={livePrices} />
             </div>
           </TabsContent>
 

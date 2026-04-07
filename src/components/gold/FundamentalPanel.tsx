@@ -1,35 +1,42 @@
 import { forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { fundamentalIndicators } from '@/data/mockGoldData';
+import { type LiveGoldPrices } from '@/hooks/useGoldPrices';
 import { 
   TrendingUp, TrendingDown, DollarSign, Percent, 
   Activity, AlertTriangle, Scale, Landmark 
 } from 'lucide-react';
 
-export const FundamentalPanel = forwardRef<HTMLDivElement>(
-  function FundamentalPanel(_props, ref) {
-    const data = fundamentalIndicators;
+export interface FundamentalPanelProps {
+  livePrices?: LiveGoldPrices | null;
+}
+
+export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps>(
+  function FundamentalPanel({ livePrices }, ref) {
+    // Fallback to defaults if no live prices
+    const DXY = livePrices?.dxy.price || 102.50;
+    const DXY_change = livePrices?.dxy.changePercent || 0;
+    const Yield = livePrices?.yield10y.price || 4.25;
+    const VIX = livePrices?.vix.price || 15.50;
+    const GoldSilverRatio = livePrices?.goldSilverRatio || 85.0;
+    const CPI = 2.4; // Usually monthly data, not live tick
+    const RealYield = Yield - CPI;
 
     // Calculate overall fundamental score
     const calculateFundamentalScore = () => {
       let score = 50;
       
       // USD weakness is bullish for gold
-      if (data.usdIndexChange < 0) score += Math.min(Math.abs(data.usdIndexChange) * 10, 15);
-      else score -= Math.min(data.usdIndexChange * 10, 15);
-      
-      // High inflation is bullish for gold
-      if (data.inflation > 3) score += 10;
-      else if (data.inflation < 2) score -= 5;
+      if (DXY_change < 0) score += Math.min(Math.abs(DXY_change) * 10, 15);
+      else score -= Math.min(DXY_change * 10, 15);
       
       // High VIX (fear) is bullish for gold
-      if (data.vix > 25) score += 15;
-      else if (data.vix > 20) score += 10;
+      if (VIX > 25) score += 15;
+      else if (VIX > 20) score += 10;
       
       // Negative real yields are bullish for gold
-      if (data.realYield < 0) score += 15;
-      else if (data.realYield < 1) score += 5;
+      if (RealYield < 0) score += 15;
+      else if (RealYield < 1) score += 5;
       else score -= 10;
       
       return Math.min(Math.max(Math.round(score), 0), 100);
@@ -40,65 +47,55 @@ export const FundamentalPanel = forwardRef<HTMLDivElement>(
     const indicators = [
       {
         label: 'USD Index (DXY)',
-        value: data.usdIndex.toFixed(2),
-        change: data.usdIndexChange,
-        impact: data.usdIndexChange < 0 ? 'bullish' : 'bearish',
+        value: DXY.toFixed(2),
+        change: DXY_change,
+        impact: DXY_change < 0 ? 'bullish' : 'bearish',
         description: 'Inverse correlation with gold',
         icon: <DollarSign className="h-4 w-4" />,
-        insight: data.usdIndexChange < 0 
+        insight: DXY_change < 0 
           ? 'Dollar weakness supports gold prices' 
           : 'Dollar strength pressures gold'
       },
       {
-        label: 'Fed Funds Rate',
-        value: `${data.fedFundsRate.toFixed(2)}%`,
-        impact: data.fedFundsRate > 4 ? 'bearish' : 'bullish',
+        label: 'US 10Y Yield',
+        value: `${Yield.toFixed(3)}%`,
+        impact: Yield > 4.5 ? 'bearish' : Yield < 3.5 ? 'bullish' : 'neutral',
         description: 'Opportunity cost for gold',
         icon: <Landmark className="h-4 w-4" />,
-        insight: data.fedFundsRate > 4 
-          ? 'High rates increase holding cost' 
-          : 'Low rates support gold as alternative'
+        insight: Yield > 4.5 
+          ? 'High yields increase gold holding cost' 
+          : 'Lower yields support gold as alternative'
       },
       {
-        label: 'Real Yield (10Y-CPI)',
-        value: `${data.realYield.toFixed(2)}%`,
-        impact: data.realYield > 1.5 ? 'bearish' : data.realYield < 0 ? 'bullish' : 'neutral',
+        label: 'Real Yield (est)',
+        value: `${RealYield.toFixed(2)}%`,
+        impact: RealYield > 1.5 ? 'bearish' : RealYield < 0 ? 'bullish' : 'neutral',
         description: 'Treasury yield minus inflation',
         icon: <Percent className="h-4 w-4" />,
-        insight: data.realYield < 0 
+        insight: RealYield < 0 
           ? 'Negative real yields are bullish for gold' 
-          : 'Positive real yields compete with gold'
-      },
-      {
-        label: 'Inflation (CPI)',
-        value: `${data.inflation.toFixed(1)}%`,
-        impact: data.inflation > 3 ? 'bullish' : 'neutral',
-        description: 'Gold is an inflation hedge',
-        icon: <TrendingUp className="h-4 w-4" />,
-        insight: data.inflation > 3 
-          ? 'High inflation drives safe-haven demand' 
-          : 'Moderate inflation has neutral impact'
+          : 'High real yields compete with gold'
       },
       {
         label: 'VIX (Fear Index)',
-        value: data.vix.toFixed(2),
-        impact: data.vix > 20 ? 'bullish' : 'neutral',
+        value: VIX.toFixed(2),
+        impact: VIX > 22 ? 'bullish' : 'neutral',
         description: 'Market volatility index',
         icon: <AlertTriangle className="h-4 w-4" />,
-        insight: data.vix > 25 
-          ? 'High fear drives gold demand' 
-          : data.vix > 20 
+        insight: VIX > 25 
+          ? 'Market fear drives safe-haven demand' 
+          : VIX > 20 
             ? 'Elevated uncertainty supports gold' 
             : 'Low volatility reduces safe-haven appeal'
       },
       {
         label: 'Gold/Silver Ratio',
-        value: data.goldSilverRatio.toFixed(1),
-        impact: data.goldSilverRatio > 80 ? 'neutral' : 'bullish',
+        value: GoldSilverRatio.toFixed(1),
+        impact: GoldSilverRatio > 85 ? 'neutral' : 'bullish',
         description: 'Historical average ~60',
         icon: <Scale className="h-4 w-4" />,
-        insight: data.goldSilverRatio > 80 
-          ? 'Elevated ratio may indicate overvaluation' 
+        insight: GoldSilverRatio > 85 
+          ? 'Elevated ratio may indicate silver undervaluation' 
           : 'Normal ratio suggests fair value'
       }
     ];
