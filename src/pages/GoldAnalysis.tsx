@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useI18n, type Language } from '@/lib/i18n';
 import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send, LogOut, Globe, User } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send, LogOut, Globe } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -98,11 +98,11 @@ export default function GoldAnalysis() {
     }
   };
 
-  const currentLivePrice = livePrices 
+  const currentLivePrice = livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
     : undefined;
 
-  const historyData = livePrices?.history 
+  const historyData = livePrices?.history
     ? (selectedInstrument === 'XAU/USD' ? livePrices.history.XAU : livePrices.history.XAG)
     : [];
 
@@ -161,20 +161,6 @@ export default function GoldAnalysis() {
                 ))}
               </div>
 
-              {/* User Badge */}
-              {user && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-accent/10 border border-accent/20">
-                  <div className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-accent uppercase">
-                      {(user.email?.[0] || 'U')}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground hidden sm:inline max-w-[120px] truncate">
-                    {user.email?.split('@')[0]}
-                  </span>
-                </div>
-              )}
-
               {/* Sign Out */}
               <Button variant="ghost" size="sm" onClick={signOut} className="h-8 px-2 text-xs gap-1 text-muted-foreground">
                 <LogOut className="h-3.5 w-3.5" />
@@ -193,7 +179,7 @@ export default function GoldAnalysis() {
               <Settings2 className="h-3.5 w-3.5" />
               {t('header.overlays')}:
             </span>
-            
+
             <div className="flex items-center gap-3">
               {[
                 { id: 'sma20', label: 'SMA20', color: 'text-[hsl(var(--gain))]' },
@@ -232,7 +218,7 @@ export default function GoldAnalysis() {
 
       <main className="container mx-auto px-4 py-4">
         <section className="mb-4">
-          <GoldPriceCards 
+          <GoldPriceCards
             selectedInstrument={selectedInstrument}
             onSelectInstrument={setSelectedInstrument}
             livePrices={livePrices}
