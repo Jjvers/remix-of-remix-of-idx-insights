@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useI18n, type Language } from '@/lib/i18n';
 import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
-import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send, LogOut, Globe } from 'lucide-react';
+import { Coins, Brain, Calendar, Users, Settings2, TrendingUp, BarChart3, Newspaper, Link2, RefreshCw, Zap, Send, LogOut, Globe, User } from 'lucide-react';
 
 const timeframes: { value: Timeframe; label: string }[] = [
   { value: '1D', label: '1D' },
@@ -160,6 +160,20 @@ export default function GoldAnalysis() {
                   </Button>
                 ))}
               </div>
+
+              {/* User Badge */}
+              {user && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-accent/10 border border-accent/20">
+                  <div className="w-5 h-5 rounded-full bg-accent/30 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-accent uppercase">
+                      {(user.email?.[0] || 'U')}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground hidden sm:inline max-w-[120px] truncate">
+                    {user.email?.split('@')[0]}
+                  </span>
+                </div>
+              )}
 
               {/* Sign Out */}
               <Button variant="ghost" size="sm" onClick={signOut} className="h-8 px-2 text-xs gap-1 text-muted-foreground">
