@@ -95,8 +95,8 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
   );
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -119,18 +119,20 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-          {sortedExperts.map(expert => (
-            <ExpertCard key={expert.id} expert={expert} />
-          ))}
-        </div>
-
-        {sortedExperts.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No expert analysis available for this instrument.
+      <CardContent className="flex-1 relative min-h-0">
+        <div className="absolute inset-0 px-6 pb-6 overflow-y-auto">
+          <div className="space-y-4 pr-3">
+            {sortedExperts.map(expert => (
+              <ExpertCard key={expert.id} expert={expert} />
+            ))}
           </div>
-        )}
+
+          {sortedExperts.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground h-full flex items-center justify-center">
+              No expert analysis available for this instrument.
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -12,6 +12,7 @@ import type { GoldInstrument } from '@/types/gold';
 import type { LiveGoldPrices } from '@/hooks/useGoldPrices';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { sendTelegramMessage } from '@/lib/telegram';
 import {
   TrendingUp, TrendingDown, DollarSign, Play, Pause,
   RotateCcw, Wallet, Target, Shield, ArrowUpRight,
@@ -44,11 +45,12 @@ interface TradingSimulatorProps {
   livePrices?: LiveGoldPrices | null;
   selectedInstrument: GoldInstrument;
   telegramChatId?: string;
+  userId?: string;
 }
 
 const INITIAL_BALANCES = [1000, 5000, 10000, 25000, 50000, 100000];
 
-export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId }: TradingSimulatorProps) {
+export function TradingSimulator({ livePrices, selectedInstrument, telegramChatId, userId }: TradingSimulatorProps) {
   const [balance, setBalance] = useState(10000);
   const [initialBalance, setInitialBalance] = useState(10000);
   const [trades, setTrades] = useState<SimTrade[]>([]);
@@ -62,6 +64,36 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const [volatility, setVolatility] = useState(50); // slider 1-100
   const { toast } = useToast();
   const { t } = useI18n();
+
+  // Load simulator state from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('trading_sim_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.balance) setBalance(parsed.balance);
+        if (parsed.initialBalance) setInitialBalance(parsed.initialBalance);
+        if (parsed.trades) {
+          setTrades(parsed.trades.map((t: any) => ({
+            ...t,
+            openedAt: new Date(t.openedAt),
+            closedAt: t.closedAt ? new Date(t.closedAt) : undefined
+          })));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load sim state', e);
+    }
+  }, []);
+
+  // Save simulator state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('trading_sim_state', JSON.stringify({
+      balance,
+      initialBalance,
+      trades
+    }));
+  }, [balance, initialBalance, trades]);
 
   const currentPrice = simPrice || (livePrices
     ? (selectedInstrument === 'XAU/USD' ? livePrices.XAU : livePrices.XAG)
@@ -91,9 +123,7 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
   const notifyTelegram = useCallback(async (message: string) => {
     if (!telegramChatId) return;
     try {
-      await supabase.functions.invoke('price-alerts', {
-        body: { action: 'notify', alert: { telegramChatId, message } }
-      });
+      await sendTelegramMessage(telegramChatId, message);
     } catch (err) {
       console.error('Telegram notify error:', err);
     }
@@ -200,6 +230,27 @@ export function TradingSimulator({ livePrices, selectedInstrument, telegramChatI
       status: 'OPEN',
       openedAt: new Date(),
     };
+
+    if (userId) {
+      if (sl) {
+        await supabase.from('price_alerts').insert({
+          user_id: userId,
+          instrument: selectedInstrument,
+          condition: type === 'BUY' ? 'BELOW' : 'ABOVE',
+          target_price: sl,
+          message: `🛑 SIMULATOR SL HIT: ${type} ${selectedInstrument} at ${sl}`,
+        });
+      }
+      if (tp) {
+        await supabase.from('price_alerts').insert({
+          user_id: userId,
+          instrument: selectedInstrument,
+          condition: type === 'BUY' ? 'ABOVE' : 'BELOW',
+          target_price: tp,
+          message: `🎯 SIMULATOR TP HIT: ${type} ${selectedInstrument} at ${tp}`,
+        });
+      }
+    }
 
     setTrades(prev => [newTrade, ...prev]);
     toast({

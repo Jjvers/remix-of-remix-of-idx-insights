@@ -276,7 +276,7 @@ export default function GoldAnalysis() {
           </TabsContent>
 
           <TabsContent value="simulator" className="space-y-4 mt-4">
-            <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} />
+            <TradingSimulator livePrices={livePrices} selectedInstrument={selectedInstrument} telegramChatId={telegramChatId} userId={user?.id} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
               <TechnicalPanel instrument={selectedInstrument} livePrice={currentLivePrice} ohlcData={historyData} />
@@ -299,7 +299,7 @@ export default function GoldAnalysis() {
 
           <TabsContent value="fundamental" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} />
+              <GoldChart instrument={selectedInstrument} showIndicators={showIndicators} livePrice={currentLivePrice} ohlcData={historyData} />
               <FundamentalPanel />
             </div>
             <ExpertAnalysisList instrument={selectedInstrument} goldPrice={livePrices?.XAU} silverPrice={livePrices?.XAG} />
@@ -343,12 +343,7 @@ export default function GoldAnalysis() {
         </Tabs>
       </main>
 
-      <footer className="border-t border-border mt-8 py-4">
-        <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          <p>{t('footer.line1')}</p>
-          <p className="mt-1">{t('footer.line2')}</p>
-        </div>
-      </footer>
+
     </div>
   );
 }
