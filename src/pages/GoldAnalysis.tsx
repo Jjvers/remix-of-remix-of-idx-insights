@@ -19,6 +19,7 @@ import { TelegramSettings } from '@/components/gold/TelegramSettings';
 import { AnimatedPrice } from '@/components/gold/AnimatedPrice';
 import { useGoldPrices } from '@/hooks/useGoldPrices';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useI18n, type Language } from '@/lib/i18n';
 import { supabase } from '@/integrations/supabase/client';
 import type { GoldInstrument, Timeframe } from '@/types/gold';
@@ -134,6 +135,8 @@ export default function GoldAnalysis() {
             </div>
 
             <div className="flex items-center gap-2">
+              <ThemeToggle />
+              
               {/* Language Switcher */}
               <Select value={language} onValueChange={(v: Language) => handleLanguageChange(v)}>
                 <SelectTrigger className="w-20 h-8 text-xs">

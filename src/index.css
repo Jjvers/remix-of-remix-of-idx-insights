@@ -8,6 +8,64 @@
 
 @layer base {
   :root {
+    --background: 30 30% 97%;
+    --foreground: 222 47% 11%;
+
+    --card: 40 20% 99%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 40 20% 99%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 30 30% 97%;
+
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 30 20% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 6%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 142 76% 36%;
+
+    --radius: 0.75rem;
+
+    /* Custom finance tokens - Shared or slightly adjusted */
+    --gain: 142 76% 36%;
+    --loss: 0 84% 60%;
+    --warning: 38 92% 50%;
+    --neutral: 199 89% 48%;
+    
+    --gradient-gain: linear-gradient(135deg, hsl(142 76% 45%), hsl(142 60% 35%));
+    --gradient-loss: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 60% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(199 89% 48%), hsl(217 91% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 96%));
+    --gradient-hero: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(210 40% 94%) 100%);
+    
+    --shadow-glow-gain: 0 0 30px hsl(142 76% 45% / 0.1);
+    --shadow-glow-loss: 0 0 30px hsl(0 72% 51% / 0.1);
+    --shadow-glow-accent: 0 0 30px hsl(199 89% 48% / 0.1);
+    --shadow-card: 0 10px 40px hsl(222 47% 11% / 0.05);
+
+    --sidebar-background: 30 20% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 30 30% 97%;
+    --sidebar-accent: 30 20% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 40 20% 88%;
+    --sidebar-ring: 142 76% 36%;
+  }
+
+  .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 96%;
 
@@ -36,17 +94,9 @@
     --input: 222 30% 14%;
     --ring: 142 76% 45%;
 
-    --radius: 0.75rem;
-
-    /* Custom finance tokens */
     --gain: 142 76% 45%;
     --loss: 0 72% 51%;
-    --warning: 38 92% 50%;
-    --neutral: 199 89% 48%;
     
-    --gradient-gain: linear-gradient(135deg, hsl(142 76% 45%), hsl(142 60% 35%));
-    --gradient-loss: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 60% 40%));
-    --gradient-accent: linear-gradient(135deg, hsl(199 89% 48%), hsl(217 91% 60%));
     --gradient-card: linear-gradient(145deg, hsl(222 47% 10%), hsl(222 47% 6%));
     --gradient-hero: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
     
@@ -63,28 +113,6 @@
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 222 30% 18%;
     --sidebar-ring: 142 76% 45%;
-  }
-
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 142 76% 45%;
-    --primary-foreground: 222 47% 6%;
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 222 30% 12%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 222 47% 6%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 222 30% 18%;
-    --input: 222 30% 14%;
-    --ring: 142 76% 45%;
   }
 }
 

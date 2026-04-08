@@ -67,7 +67,7 @@ export function AnimatedPrice({ value, prefix = '$', decimals = 2, className, sh
     >
       {formatted}
       {flash && (
-        <span className="inline-block ml-0.5 text-[0.6em] animate-bounce">
+        <span className={cn("inline-block ml-0.5 text-[0.6em] animate-bounce", flash === 'up' ? 'text-[hsl(var(--gain))]' : 'text-[hsl(var(--loss))]')}>
           {flash === 'up' ? '▲' : '▼'}
         </span>
       )}
