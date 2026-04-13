@@ -7,11 +7,5 @@
     { "source": "/api/yahoo/v8/finance/chart/:symbol", "destination": "/api/yahoo?symbol=:symbol" },
     { "source": "/api/telegram/:slug*", "destination": "/api/telegram?slug=:slug*" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron-alerts",
-      "schedule": "* * * * *"
-    }
   ]
 }
