@@ -6,6 +6,7 @@ import { generateEconomicCalendar } from '@/data/dynamicData';
 import type { EconomicEvent, EventImpact } from '@/types/gold';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { Calendar, AlertCircle, RefreshCw } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 const impactStyles: Record<EventImpact, string> = {
   'High': 'bg-loss text-loss-foreground',
@@ -19,11 +20,11 @@ const impactDots: Record<EventImpact, string> = {
   'Low': 'bg-muted-foreground'
 };
 
-function EventCard({ event }: { event: EconomicEvent }) {
+function EventCard({ event, t }: { event: EconomicEvent; t: (k: string) => string }) {
   const dateLabel = isToday(event.date) 
-    ? 'Today' 
+    ? t('time.today') 
     : isTomorrow(event.date) 
-      ? 'Tomorrow' 
+      ? t('time.tomorrow') 
       : format(event.date, 'MMM dd');
 
   return (
@@ -31,7 +32,7 @@ function EventCard({ event }: { event: EconomicEvent }) {
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Badge className={impactStyles[event.impact]} variant="secondary">
-            {event.impact}
+            {t(`anal.${event.impact.toLowerCase()}`)}
           </Badge>
           <Badge variant="outline">{event.country}</Badge>
         </div>
@@ -48,19 +49,19 @@ function EventCard({ event }: { event: EconomicEvent }) {
         <div className="flex gap-4 pt-2 border-t border-border">
           {event.previous && (
             <div>
-              <p className="text-xs text-muted-foreground">Previous</p>
+              <p className="text-xs text-muted-foreground">{t('trade.previous')}</p>
               <p className="font-mono text-sm">{event.previous}</p>
             </div>
           )}
           {event.forecast && (
             <div>
-              <p className="text-xs text-muted-foreground">Forecast</p>
+              <p className="text-xs text-muted-foreground">{t('trade.forecast')}</p>
               <p className="font-mono text-sm text-accent">{event.forecast}</p>
             </div>
           )}
           {event.actual && (
             <div>
-              <p className="text-xs text-muted-foreground">Actual</p>
+              <p className="text-xs text-muted-foreground">{t('trade.actual')}</p>
               <p className="font-mono text-sm font-bold">{event.actual}</p>
             </div>
           )}
@@ -71,10 +72,11 @@ function EventCard({ event }: { event: EconomicEvent }) {
 }
 
 export function EconomicCalendar() {
+  const { t, language } = useI18n();
   const [filter, setFilter] = useState<'all' | 'high'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const events = useMemo(() => generateEconomicCalendar(), [refreshKey]);
+  const events = useMemo(() => generateEconomicCalendar(language), [refreshKey, language]);
 
   const filteredEvents = events
     .filter(e => filter === 'all' || e.impact === 'High')
@@ -90,25 +92,23 @@ export function EconomicCalendar() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Economic Calendar
+            {t('tab.calendar')}
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-              Live
+              {t('ui.live')}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1"
+            <button
+              className="flex items-center gap-1 h-7 px-2 text-xs border border-border rounded hover:bg-muted transition-colors"
               onClick={() => setRefreshKey(k => k + 1)}
             >
               <RefreshCw className="h-3 w-3" />
-              Refresh
-            </Button>
+              {t('ui.refresh')}
+            </button>
             {upcomingHigh > 0 && (
               <Badge variant="destructive" className="gap-1">
                 <AlertCircle className="h-3 w-3" />
-                {upcomingHigh} High Impact
+                {upcomingHigh} {t('anal.high')} {t('trade.impact')}
               </Badge>
             )}
           </div>
@@ -121,37 +121,37 @@ export function EconomicCalendar() {
             size="sm"
             onClick={() => setFilter('all')}
           >
-            All Events
+            {t('cat.all')}
           </Button>
           <Button 
             variant={filter === 'high' ? 'default' : 'outline'} 
             size="sm"
             onClick={() => setFilter('high')}
           >
-            High Impact Only
+            {t('anal.high')} {t('trade.impact')}
           </Button>
         </div>
 
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {filteredEvents.map(event => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} t={t} />
           ))}
         </div>
 
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <div className="flex items-center gap-4 text-xs">
-            <span className="text-muted-foreground">Impact:</span>
+            <span className="text-muted-foreground">{t('trade.impact')}:</span>
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${impactDots['High']}`} />
-              <span>High</span>
+              <span>{t('anal.high')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${impactDots['Medium']}`} />
-              <span>Medium</span>
+              <span>{t('anal.medium')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${impactDots['Low']}`} />
-              <span>Low</span>
+              <span>{t('anal.low')}</span>
             </div>
           </div>
         </div>
@@ -159,3 +159,4 @@ export function EconomicCalendar() {
     </Card>
   );
 }
+

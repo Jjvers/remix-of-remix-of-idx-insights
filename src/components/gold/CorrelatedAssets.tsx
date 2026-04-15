@@ -7,6 +7,7 @@ import type { CorrelatedAsset } from '@/types/gold';
 import { TrendingUp, TrendingDown, Link2, ArrowRight, Info, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
+import { useI18n } from '@/lib/i18n';
 
 function MiniSparkline({ prices, isPositive }: { prices: number[]; isPositive: boolean }) {
   const data = prices.filter(p => !isNaN(p)).map((p) => ({ v: p }));
@@ -53,7 +54,7 @@ function CorrelationBar({ value }: { value: number }) {
   );
 }
 
-function AssetCard({ asset }: { asset: CorrelatedAsset }) {
+function AssetCard({ asset, t }: { asset: CorrelatedAsset; t: (k: string) => string }) {
   const isPositive = (asset.changePercent || 0) >= 0;
 
   return (
@@ -80,7 +81,7 @@ function AssetCard({ asset }: { asset: CorrelatedAsset }) {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">Correlation w/ Gold</span>
+          <span className="text-xs text-muted-foreground">{t('corr.with_gold')}</span>
           <CorrelationBar value={asset.correlation} />
         </div>
       </div>
@@ -102,40 +103,48 @@ interface CorrelatedAssetsProps {
 }
 
 export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProps) {
+  const { t, language } = useI18n();
   const assets = useMemo(() => {
     if (!livePrices) return [];
 
     const goldPrice = livePrices.XAU;
+    const isEn = language === 'en';
 
     const data: CorrelatedAsset[] = [
       {
         symbol: 'DXY',
-        name: 'US Dollar Index',
+        name: isEn ? 'US Dollar Index' : 'Indeks Dolar AS',
         price: livePrices.dxy.price,
         change: 0,
         changePercent: livePrices.dxy.changePercent,
         correlation: -0.82,
-        reasoning: `Dollar index at ${livePrices.dxy.price.toFixed(2)} — inverse relationship with gold. When DXY drops, gold at $${goldPrice.toFixed(0)} typically rises.`,
+        reasoning: isEn 
+          ? `Dollar index at ${livePrices.dxy.price.toFixed(2)} — inverse relationship with gold. When DXY drops, gold at $${goldPrice.toFixed(0)} typically rises.`
+          : `Indeks dolar di ${livePrices.dxy.price.toFixed(2)} — hubungan terbalik dengan emas. Saat DXY turun, emas di $${goldPrice.toFixed(0)} biasanya naik.`,
         recentPrices: livePrices.dxy.history,
       },
       {
         symbol: 'UST10Y',
-        name: 'US 10-Year Treasury Yield',
+        name: isEn ? 'US 10-Year Treasury Yield' : 'Imbal Hasil Obligasi 10 Thn AS',
         price: livePrices.yield10y.price,
         change: 0,
         changePercent: livePrices.yield10y.changePercent,
         correlation: -0.65,
-        reasoning: `10Y yield at ${livePrices.yield10y.price.toFixed(2)}%. Rising real yields pressure gold by increasing the opportunity cost of non-yielding assets.`,
+        reasoning: isEn
+          ? `10Y yield at ${livePrices.yield10y.price.toFixed(2)}%. Rising real yields pressure gold by increasing the opportunity cost of non-yielding assets.`
+          : `Imbal hasil 10Y di ${livePrices.yield10y.price.toFixed(2)}%. Kenaikan imbal hasil riil menekan emas dengan meningkatkan biaya peluang.`,
         recentPrices: livePrices.yield10y.history,
       },
       {
         symbol: 'CL=F',
-        name: 'Crude Oil (WTI)',
+        name: isEn ? 'Crude Oil (WTI)' : 'Minyak Mentah (WTI)',
         price: livePrices.oil.price,
         change: 0,
         changePercent: livePrices.oil.changePercent,
         correlation: 0.35,
-        reasoning: `Oil at $${livePrices.oil.price.toFixed(2)} reflects energy inflation expectations. Higher oil ➜ gold demand as inflation hedge.`,
+        reasoning: isEn
+          ? `Oil at $${livePrices.oil.price.toFixed(2)} reflects energy inflation expectations. Higher oil ➜ gold demand as inflation hedge.`
+          : `Minyak di $${livePrices.oil.price.toFixed(2)} mencerminkan ekspektasi inflasi energi. Minyak naik ➜ permintaan emas sebagai lindung nilai inflasi.`,
         recentPrices: livePrices.oil.history,
       },
       {
@@ -145,12 +154,14 @@ export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProp
         change: 0,
         changePercent: livePrices.btc.changePercent,
         correlation: 0.25,
-        reasoning: `Bitcoin at $${livePrices.btc.price.toFixed(0)} competes with gold at $${goldPrice.toFixed(0)} for "digital gold" narrative.`,
+        reasoning: isEn
+          ? `Bitcoin at $${livePrices.btc.price.toFixed(0)} competes with gold at $${goldPrice.toFixed(0)} for "digital gold" narrative.`
+          : `Bitcoin di $${livePrices.btc.price.toFixed(0)} bersaing dengan emas di $${goldPrice.toFixed(0)} untuk narasi "emas digital".`,
         recentPrices: livePrices.btc.history,
       },
     ];
     return data;
-  }, [livePrices]);
+  }, [livePrices, language]);
 
   return (
     <Card>
@@ -158,9 +169,9 @@ export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProp
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Link2 className="h-5 w-5 text-accent" />
-            Correlated Assets
+            {t('tab.correlation')}
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-              Live
+              {t('ui.live')}
             </Badge>
             <TooltipProvider>
               <Tooltip>
@@ -169,8 +180,7 @@ export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProp
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p className="text-xs">
-                    Assets correlated with gold. Leading indicators move before gold,
-                    and can be used as early signals to predict gold price movements.
+                    {t('corr.tooltip')}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -183,17 +193,18 @@ export function CorrelatedAssets({ livePrices, onRefresh }: CorrelatedAssetsProp
             onClick={onRefresh}
           >
             <RefreshCw className="h-3 w-3" />
-            Refresh
+            {t('ui.refresh')}
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {assets.map(asset => (
-            <AssetCard key={asset.symbol} asset={asset} />
+            <AssetCard key={asset.symbol} asset={asset} t={t} />
           ))}
         </div>
       </CardContent>
     </Card>
   );
 }
+

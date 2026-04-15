@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, Percent, 
   Activity, AlertTriangle, Scale, Landmark 
 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export interface FundamentalPanelProps {
   livePrices?: LiveGoldPrices | null;
@@ -13,6 +14,7 @@ export interface FundamentalPanelProps {
 
 export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps>(
   function FundamentalPanel({ livePrices }, ref) {
+    const { t } = useI18n();
     // Fallback to defaults if no live prices
     const DXY = livePrices?.dxy.price || 102.50;
     const DXY_change = livePrices?.dxy.changePercent || 0;
@@ -50,53 +52,53 @@ export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps
         value: DXY.toFixed(2),
         change: DXY_change,
         impact: DXY_change < 0 ? 'bullish' : 'bearish',
-        description: 'Inverse correlation with gold',
+        description: t('fundamental.dxy.desc'),
         icon: <DollarSign className="h-4 w-4" />,
         insight: DXY_change < 0 
-          ? 'Dollar weakness supports gold prices' 
-          : 'Dollar strength pressures gold'
+          ? t('fundamental.dxy.bullish') 
+          : t('fundamental.dxy.bearish')
       },
       {
         label: 'US 10Y Yield',
         value: `${Yield.toFixed(3)}%`,
         impact: Yield > 4.5 ? 'bearish' : Yield < 3.5 ? 'bullish' : 'neutral',
-        description: 'Opportunity cost for gold',
+        description: t('fundamental.yield.desc'),
         icon: <Landmark className="h-4 w-4" />,
         insight: Yield > 4.5 
-          ? 'High yields increase gold holding cost' 
-          : 'Lower yields support gold as alternative'
+          ? t('fundamental.yield.bearish') 
+          : t('fundamental.yield.bullish')
       },
       {
         label: 'Real Yield (est)',
         value: `${RealYield.toFixed(2)}%`,
         impact: RealYield > 1.5 ? 'bearish' : RealYield < 0 ? 'bullish' : 'neutral',
-        description: 'Treasury yield minus inflation',
+        description: t('fundamental.realYield.desc'),
         icon: <Percent className="h-4 w-4" />,
         insight: RealYield < 0 
-          ? 'Negative real yields are bullish for gold' 
-          : 'High real yields compete with gold'
+          ? t('fundamental.realYield.bullish') 
+          : t('fundamental.realYield.bearish')
       },
       {
         label: 'VIX (Fear Index)',
         value: VIX.toFixed(2),
         impact: VIX > 22 ? 'bullish' : 'neutral',
-        description: 'Market volatility index',
+        description: t('fundamental.vix.desc'),
         icon: <AlertTriangle className="h-4 w-4" />,
         insight: VIX > 25 
-          ? 'Market fear drives safe-haven demand' 
+          ? t('fundamental.vix.bullish_high') 
           : VIX > 20 
-            ? 'Elevated uncertainty supports gold' 
-            : 'Low volatility reduces safe-haven appeal'
+            ? t('fundamental.vix.bullish_medium') 
+            : t('fundamental.vix.neutral')
       },
       {
         label: 'Gold/Silver Ratio',
         value: GoldSilverRatio.toFixed(1),
         impact: GoldSilverRatio > 85 ? 'neutral' : 'bullish',
-        description: 'Historical average ~60',
+        description: t('fundamental.gsRatio.desc'),
         icon: <Scale className="h-4 w-4" />,
         insight: GoldSilverRatio > 85 
-          ? 'Elevated ratio may indicate silver undervaluation' 
-          : 'Normal ratio suggests fair value'
+          ? t('fundamental.gsRatio.neutral') 
+          : t('fundamental.gsRatio.bullish')
       }
     ];
 
@@ -107,9 +109,9 @@ export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps
     };
 
     const impactBadge = {
-      bullish: 'Bullish',
-      bearish: 'Bearish',
-      neutral: 'Neutral'
+      bullish: t('anal.bullish'),
+      bearish: t('anal.bearish'),
+      neutral: t('anal.neutral')
     };
 
     return (
@@ -118,10 +120,10 @@ export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Activity className="h-5 w-5 text-accent" />
-              Fundamental Factors
+              {t('tab.fundamental')}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Score:</span>
+              <span className="text-sm text-muted-foreground">{t('trade.score')}:</span>
               <Badge className={fundamentalScore >= 60 ? 'bg-gain' : fundamentalScore >= 40 ? 'bg-muted' : 'bg-loss'}>
                 {fundamentalScore}/100
               </Badge>
@@ -174,17 +176,17 @@ export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps
                 fundamentalScore >= 40 ? 'bg-yellow-500' : 'bg-loss'
               }`} />
               <p className="text-sm font-medium">
-                {fundamentalScore >= 60 ? 'Bullish Fundamental Backdrop' : 
-                 fundamentalScore >= 40 ? 'Mixed Fundamental Signals' : 
-                 'Bearish Fundamental Conditions'}
+                {fundamentalScore >= 60 ? t('fundamental.summary.bullish.title') : 
+                 fundamentalScore >= 40 ? t('fundamental.summary.mixed.title') : 
+                 t('fundamental.summary.bearish.title')}
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
               {fundamentalScore >= 60 
-                ? 'Current macro conditions favor gold prices. Weak USD and elevated uncertainty create a supportive environment.'
+                ? t('fundamental.summary.bullish.desc')
                 : fundamentalScore >= 40
-                  ? 'Mixed signals from macro factors. Watch for changes in USD strength and inflation expectations.'
-                  : 'Headwinds from strong USD and high real yields. Gold faces challenges in current environment.'}
+                  ? t('fundamental.summary.mixed.desc')
+                  : t('fundamental.summary.bearish.desc')}
             </p>
           </div>
         </CardContent>
@@ -192,3 +194,4 @@ export const FundamentalPanel = forwardRef<HTMLDivElement, FundamentalPanelProps
     );
   }
 );
+

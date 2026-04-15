@@ -7,6 +7,7 @@ import { generateExpertAnalyses } from '@/data/dynamicData';
 import type { ExpertAnalysis, Signal, GoldInstrument } from '@/types/gold';
 import { formatDistanceToNow } from 'date-fns';
 import { Target, Shield, User, RefreshCw } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface ExpertAnalysisListProps {
   instrument?: GoldInstrument;
@@ -26,7 +27,7 @@ const formatPrice = (price: number): string => {
   return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
+function ExpertCard({ expert, t }: { expert: ExpertAnalysis; t: (k: string) => string }) {
   return (
     <div className="p-4 rounded-lg border border-border hover:border-accent/50 transition-colors">
       <div className="flex items-start gap-3 mb-3">
@@ -53,18 +54,18 @@ function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
       <div className="flex flex-wrap gap-3 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-sm">
           <Target className="h-4 w-4 text-accent" />
-          <span className="text-muted-foreground">Target:</span>
+          <span className="text-muted-foreground">{t('trade.target')}:</span>
           <span className="font-mono text-foreground">{formatPrice(expert.targetPrice)}</span>
         </div>
         {expert.stopLoss && (
           <div className="flex items-center gap-1.5 text-sm">
             <Shield className="h-4 w-4 text-loss" />
-            <span className="text-muted-foreground">Stop:</span>
+            <span className="text-muted-foreground">{t('trade.stop')}:</span>
             <span className="font-mono text-foreground">{formatPrice(expert.stopLoss)}</span>
           </div>
         )}
         <div className="flex items-center gap-1.5 text-sm">
-          <span className="text-muted-foreground">Accuracy:</span>
+          <span className="text-muted-foreground">{t('trade.accuracy')}:</span>
           <span className={`font-mono ${expert.accuracy >= 70 ? 'text-gain' : 'text-foreground'}`}>
             {expert.accuracy}%
           </span>
@@ -82,9 +83,10 @@ function ExpertCard({ expert }: { expert: ExpertAnalysis }) {
 }
 
 export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 }: ExpertAnalysisListProps) {
+  const { t, language } = useI18n();
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const allExperts = useMemo(() => generateExpertAnalyses(goldPrice, silverPrice), [goldPrice, silverPrice, refreshKey]);
+  const allExperts = useMemo(() => generateExpertAnalyses(goldPrice, silverPrice, language), [goldPrice, silverPrice, refreshKey, language]);
 
   const filteredExperts = instrument 
     ? allExperts.filter(e => e.instrument === instrument)
@@ -100,9 +102,9 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Expert Analysis
+            {t('tab.experts')}
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-              Live
+              {t('ui.live')}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -113,9 +115,9 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
               onClick={() => setRefreshKey(k => k + 1)}
             >
               <RefreshCw className="h-3 w-3" />
-              Refresh
+              {t('ui.refresh')}
             </Button>
-            <Badge variant="outline">{sortedExperts.length} analysts</Badge>
+            <Badge variant="outline">{sortedExperts.length} {t('trade.analysts')}</Badge>
           </div>
         </div>
       </CardHeader>
@@ -123,7 +125,7 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
         <div className="absolute inset-0 px-6 pb-6 overflow-y-auto">
           <div className="space-y-4 pr-3">
             {sortedExperts.map(expert => (
-              <ExpertCard key={expert.id} expert={expert} />
+              <ExpertCard key={expert.id} expert={expert} t={t} />
             ))}
           </div>
 
@@ -137,3 +139,4 @@ export function ExpertAnalysisList({ instrument, goldPrice = 0, silverPrice = 0 
     </Card>
   );
 }
+

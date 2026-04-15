@@ -109,9 +109,72 @@ const translations: Record<Language, Record<string, string>> = {
     // Correlated Assets
     'corr.reasoning': 'Analysis',
 
-    // Footer
-    'footer.line1': 'Data powered by GoldAPI.io. AI predictions are for informational purposes only.',
-    'footer.line2': 'Not financial advice. Always do your own research before trading.',
+    // General UI
+    'ui.live': 'Live',
+    'ui.refresh': 'Refresh',
+
+    // Time & Date
+    'time.today': 'Today',
+    'time.tomorrow': 'Tomorrow',
+
+    // Trading Details
+    'trade.target': 'Target',
+    'trade.stop': 'Stop',
+    'trade.accuracy': 'Accuracy',
+    'trade.analysts': 'Analysts',
+    'trade.impact': 'Impact',
+    'trade.previous': 'Previous',
+    'trade.forecast': 'Forecast',
+    'trade.actual': 'Actual',
+    'trade.reasoning': 'Analysis Rationale',
+
+    // Categories
+    'cat.all': 'All',
+    'cat.market': 'Market',
+    'cat.geopolitical': 'Geopolitical',
+    'cat.macro': 'Macro',
+    'cat.demand': 'Demand',
+
+    // Analysis Terms
+    'anal.bullish': 'Bullish',
+    'anal.bearish': 'Bearish',
+    'anal.neutral': 'Neutral',
+    'anal.high': 'High',
+    'anal.medium': 'Medium',
+    'anal.low': 'Low',
+    'anal.signal': 'Signal',
+    'anal.probability': 'Probability',
+    'anal.confidence': 'Confidence',
+    'anal.riskReward': 'Risk/Reward',
+
+    // Fundamental Details
+    'fundamental.dxy.desc': 'Inverse correlation with gold',
+    'fundamental.dxy.bullish': 'Dollar weakness supports gold prices',
+    'fundamental.dxy.bearish': 'Dollar strength pressures gold',
+    'fundamental.yield.desc': 'Opportunity cost for gold',
+    'fundamental.yield.bearish': 'High yields increase gold holding cost',
+    'fundamental.yield.bullish': 'Lower yields support gold as alternative',
+    'fundamental.realYield.desc': 'Treasury yield minus inflation',
+    'fundamental.realYield.bullish': 'Negative real yields are bullish for gold',
+    'fundamental.realYield.bearish': 'High real yields compete with gold',
+    'fundamental.vix.desc': 'Market volatility index',
+    'fundamental.vix.bullish_high': 'Market fear drives safe-haven demand',
+    'fundamental.vix.bullish_medium': 'Elevated uncertainty supports gold',
+    'fundamental.vix.neutral': 'Low volatility reduces safe-haven appeal',
+    'fundamental.gsRatio.desc': 'Historical average ~60',
+    'fundamental.gsRatio.neutral': 'Elevated ratio may indicate silver undervaluation',
+    'fundamental.gsRatio.bullish': 'Normal ratio suggests fair value',
+    'fundamental.summary.bullish.title': 'Bullish Fundamental Backdrop',
+    'fundamental.summary.bullish.desc': 'Current macro conditions favor gold prices. Weak USD and elevated uncertainty create a supportive environment.',
+    'fundamental.summary.mixed.title': 'Mixed Fundamental Signals',
+    'fundamental.summary.mixed.desc': 'Mixed signals from macro factors. Watch for changes in USD strength and inflation expectations.',
+    'fundamental.summary.bearish.title': 'Bearish Fundamental Conditions',
+    'fundamental.summary.bearish.desc': 'Headwinds from strong USD and high real yields. Gold faces challenges in current environment.',
+
+    // Correlated Assets Details
+    'corr.with_gold': 'Correlation w/ Gold',
+    'corr.market_note': 'Market Note',
+    'corr.tooltip': 'Assets correlated with gold. Leading indicators move before gold, and can be used as early signals to predict gold price movements.',
 
     // Language
     'lang.switch': 'Language',
@@ -213,15 +276,72 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.checkEmail': 'Cek email kamu',
     'auth.checkEmailDesc': 'Kami mengirim link konfirmasi. Silakan verifikasi email kamu untuk masuk.',
 
-    // Correlated Assets
-    'corr.reasoning': 'Analisis',
+    // General UI
+    'ui.live': 'Live',
+    'ui.refresh': 'Segarkan',
 
-    // Footer
-    'footer.line1': 'Data dari GoldAPI.io. Prediksi AI hanya untuk informasi.',
-    'footer.line2': 'Bukan saran keuangan. Selalu lakukan riset sendiri sebelum trading.',
+    // Time & Date
+    'time.today': 'Hari Ini',
+    'time.tomorrow': 'Besok',
 
-    // Language
-    'lang.switch': 'Bahasa',
+    // Trading Details
+    'trade.target': 'Target',
+    'trade.stop': 'Stop',
+    'trade.accuracy': 'Akurasi',
+    'trade.analysts': 'Analis',
+    'trade.impact': 'Dampak',
+    'trade.previous': 'Sebelumnya',
+    'trade.forecast': 'Prediksi',
+    'trade.actual': 'Aktual',
+    'trade.reasoning': 'Rasio Analisis',
+
+    // Categories
+    'cat.all': 'Semua',
+    'cat.market': 'Pasar',
+    'cat.geopolitical': 'Geopolitik',
+    'cat.macro': 'Makro',
+    'cat.demand': 'Permintaan',
+
+    // Analysis Terms
+    'anal.bullish': 'Bullish',
+    'anal.bearish': 'Bearish',
+    'anal.neutral': 'Netral',
+    'anal.high': 'Tinggi',
+    'anal.medium': 'Sedang',
+    'anal.low': 'Rendah',
+    'anal.signal': 'Sinyal',
+    'anal.probability': 'Probabilitas',
+    'anal.confidence': 'Keyakinan',
+    'anal.riskReward': 'Risiko/Hasil',
+
+    // Fundamental Details (ID)
+    'fundamental.dxy.desc': 'Korelasi terbalik dengan emas',
+    'fundamental.dxy.bullish': 'Pelemahan Dolar mendukung harga emas',
+    'fundamental.dxy.bearish': 'Penguatan Dolar menekan harga emas',
+    'fundamental.yield.desc': 'Biaya peluang untuk memegang emas',
+    'fundamental.yield.bearish': 'Bunga tinggi meningkatkan biaya simpan emas',
+    'fundamental.yield.bullish': 'Bunga rendah mendukung emas sebagai alternatif',
+    'fundamental.realYield.desc': 'Imbal hasil obligasi dikurangi inflasi',
+    'fundamental.realYield.bullish': 'Suku bunga riil negatif sangat menguntungkan emas',
+    'fundamental.realYield.bearish': 'Suku bunga riil tinggi bersaing dengan emas',
+    'fundamental.vix.desc': 'Indeks volatilitas pasar',
+    'fundamental.vix.bullish_high': 'Ketakutan pasar mendorong permintaan safe-haven',
+    'fundamental.vix.bullish_medium': 'Ketidakpastian yang meningkat mendukung emas',
+    'fundamental.vix.neutral': 'Volatilitas rendah mengurangi daya tarik safe-haven',
+    'fundamental.gsRatio.desc': 'Rata-rata historis ~60',
+    'fundamental.gsRatio.neutral': 'Rasio tinggi menunjukkan perak mungkin murah',
+    'fundamental.gsRatio.bullish': 'Rasio normal menunjukkan nilai wajar',
+    'fundamental.summary.bullish.title': 'Latar Belakang Fundamental Bullish',
+    'fundamental.summary.bullish.desc': 'Kondisi makro saat ini mendukung harga emas. USD yang lemah dan ketidakpastian yang tinggi menciptakan lingkungan yang mendukung.',
+    'fundamental.summary.mixed.title': 'Sinyal Fundamental Campuran',
+    'fundamental.summary.mixed.desc': 'Sinyal campuran dari faktor makro. Perhatikan perubahan kekuatan USD dan ekspektasi inflasi.',
+    'fundamental.summary.bearish.title': 'Kondisi Fundamental Bearish',
+    'fundamental.summary.bearish.desc': 'Hambatan dari USD yang kuat dan imbal hasil riil yang tinggi. Emas menghadapi tantangan di lingkungan saat ini.',
+
+    // Correlated Assets Details (ID)
+    'corr.with_gold': 'Korelasi dengan Emas',
+    'corr.market_note': 'Catatan Pasar',
+    'corr.tooltip': 'Aset yang berkorelasi dengan emas. Indikator utama bergerak sebelum emas, dan dapat digunakan sebagai sinyal awal untuk memprediksi pergerakan harga emas.',
   },
 };
 

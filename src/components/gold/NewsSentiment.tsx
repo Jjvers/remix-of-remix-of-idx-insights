@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { generateNews, type DynamicNewsItem } from '@/data/dynamicData';
 import { formatDistanceToNow } from 'date-fns';
 import { Newspaper, TrendingUp, TrendingDown, Minus, Globe, Shield, BarChart3, Users, RefreshCw } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 const sentimentStyles = {
   Bullish: { icon: TrendingUp, color: 'text-gain', bg: 'bg-gain/10 border-gain/30' },
@@ -27,7 +28,7 @@ interface NewsSentimentProps {
   changePct?: number;
 }
 
-function NewsCard({ news }: { news: DynamicNewsItem }) {
+function NewsCard({ news, t }: { news: DynamicNewsItem; t: (k: string) => string }) {
   const sentiment = news.sentiment as keyof typeof sentimentStyles;
   const style = sentimentStyles[sentiment];
   const SentimentIcon = style.icon;
@@ -42,7 +43,7 @@ function NewsCard({ news }: { news: DynamicNewsItem }) {
             {news.source}
           </Badge>
           <Badge variant="outline" className="text-[10px] h-5 bg-accent/10 text-accent border-accent/30">
-            {news.category}
+            {t(`cat.${news.category.toLowerCase()}`)}
           </Badge>
           <span className="text-[10px] text-muted-foreground">
             {formatDistanceToNow(news.publishedAt, { addSuffix: true })}
@@ -50,7 +51,7 @@ function NewsCard({ news }: { news: DynamicNewsItem }) {
         </div>
         <div className={`flex items-center gap-1 ${style.color}`}>
           <SentimentIcon className="h-3.5 w-3.5" />
-          <span className="text-[10px] font-medium">{news.sentiment}</span>
+          <span className="text-[10px] font-medium">{t(`anal.${news.sentiment.toLowerCase()}`)}</span>
         </div>
       </div>
       <h4 className="text-sm font-medium text-foreground leading-snug mb-1">
@@ -61,7 +62,7 @@ function NewsCard({ news }: { news: DynamicNewsItem }) {
       </p>
       <div className="flex items-center gap-2 mt-2">
         <Badge variant="outline" className="text-[10px]">
-          Impact: {news.impact}
+          {t('trade.impact')}: {t(`anal.${news.impact.toLowerCase()}`)}
         </Badge>
       </div>
     </div>
@@ -69,12 +70,16 @@ function NewsCard({ news }: { news: DynamicNewsItem }) {
 }
 
 export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }: NewsSentimentProps) {
+  const { t, language } = useI18n();
   const [filter, setFilter] = useState<FilterCategory>('All');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [allNews, setAllNews] = useState<DynamicNewsItem[]>([]);
 
-  const allNews = useMemo(() => {
-    return generateNews(goldPrice, silverPrice, changePct);
-  }, [goldPrice, silverPrice, changePct, refreshKey]);
+  // Only generate news when language changes or refresh is clicked
+  useMemo(() => {
+    const news = generateNews(goldPrice, silverPrice, changePct, language);
+    setAllNews(news);
+  }, [refreshKey, language]);
 
   const filteredNews = filter === 'All'
     ? allNews
@@ -86,12 +91,12 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
   const sentimentScore = total > 0 ? Math.round((bullishCount / total) * 100) : 50;
   const geoCount = allNews.filter(n => n.category === 'Geopolitical').length;
 
-  const filters: { value: FilterCategory; label: string; icon?: React.ElementType }[] = [
-    { value: 'All', label: 'All' },
-    { value: 'Geopolitical', label: `Geopolitics (${geoCount})`, icon: Globe },
-    { value: 'Macro', label: 'Macro', icon: Shield },
-    { value: 'Demand', label: 'Demand', icon: Users },
-    { value: 'Market', label: 'Market', icon: BarChart3 },
+  const filters: { value: FilterCategory; labelKey: string; icon?: React.ElementType }[] = [
+    { value: 'All', labelKey: 'cat.all' },
+    { value: 'Geopolitical', labelKey: `cat.geopolitical`, icon: Globe },
+    { value: 'Macro', labelKey: 'cat.macro', icon: Shield },
+    { value: 'Demand', labelKey: 'cat.demand', icon: Users },
+    { value: 'Market', labelKey: 'cat.market', icon: BarChart3 },
   ];
 
   return (
@@ -100,9 +105,9 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Newspaper className="h-5 w-5 text-accent" />
-            News & Sentiment
+            {t('tab.news')}
             <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-[10px]">
-              Live
+              {t('ui.live')}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -113,7 +118,7 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
               onClick={() => setRefreshKey(k => k + 1)}
             >
               <RefreshCw className="h-3 w-3" />
-              Refresh
+              {t('ui.refresh')}
             </Button>
             <div className="flex items-center gap-1 text-xs">
               <div className="w-2 h-2 rounded-full bg-gain" />
@@ -129,9 +134,9 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
         {/* Sentiment Gauge */}
         <div className="mt-2">
           <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-            <span>Bearish</span>
+            <span>{t('anal.bearish')}</span>
             <span className="font-medium text-foreground">Sentiment: {sentimentScore}%</span>
-            <span>Bullish</span>
+            <span>{t('anal.bullish')}</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden flex">
             <div className="bg-loss h-full transition-all" style={{ width: `${100 - sentimentScore}%` }} />
@@ -150,7 +155,7 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
               onClick={() => setFilter(f.value)}
             >
               {f.icon && <f.icon className="h-3 w-3" />}
-              {f.label}
+              {t(f.labelKey)} {f.value === 'Geopolitical' ? `(${geoCount})` : ''}
             </Button>
           ))}
         </div>
@@ -158,7 +163,7 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
       <CardContent>
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
           {filteredNews.map((news) => (
-            <NewsCard key={news.id} news={news} />
+            <NewsCard key={news.id} news={news} t={t} />
           ))}
           {filteredNews.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">No news in this category</p>
@@ -167,4 +172,5 @@ export function NewsSentiment({ goldPrice = 0, silverPrice = 0, changePct = 0 }:
       </CardContent>
     </Card>
   );
-}
+}
+
